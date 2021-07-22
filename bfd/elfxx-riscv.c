@@ -1099,7 +1099,7 @@ static const char * const riscv_std_zxm_ext_strtab[] =
 
 static const char * const riscv_std_draft_ext_strtab[] =
 {
-  "zfh", "zvamo", "zvlsseg", NULL
+  "zfh", "zvamo", "zvlsseg", "svinval", NULL
 };
 
 /* ISA extension prefixed name class.  Must define them in parsing order.  */
@@ -1172,25 +1172,34 @@ static bool
 riscv_valid_prefixed_ext (const char *ext)
 {
   enum riscv_prefix_ext_class class = riscv_get_prefix_class (ext);
+  bool result = false;
+
   switch (class)
   {
   case RV_ISA_CLASS_Z:
-    return (riscv_known_prefixed_ext (ext, riscv_std_z_ext_strtab)
-	    || riscv_known_prefixed_ext (ext, riscv_std_draft_ext_strtab));
+    result = riscv_known_prefixed_ext (ext, riscv_std_z_ext_strtab);
+    break;
   case RV_ISA_CLASS_ZXM:
-    return riscv_known_prefixed_ext (ext, riscv_std_zxm_ext_strtab);
+    result = riscv_known_prefixed_ext (ext, riscv_std_zxm_ext_strtab);
+    break;
   case RV_ISA_CLASS_S:
-    return riscv_known_prefixed_ext (ext, riscv_std_s_ext_strtab);
+    result = riscv_known_prefixed_ext (ext, riscv_std_s_ext_strtab);
+    break;
   case RV_ISA_CLASS_H:
-    return riscv_known_prefixed_ext (ext, riscv_std_h_ext_strtab);
+    result = riscv_known_prefixed_ext (ext, riscv_std_h_ext_strtab);
+    break;
   case RV_ISA_CLASS_X:
     /* Only the single x is invalid.  */
     if (strcmp (ext, "x") != 0)
       return true;
   default:
-    break;
+    return false;
   }
-  return false;
+
+  if (!result)
+    result = riscv_known_prefixed_ext (ext, riscv_std_draft_ext_strtab);
+
+  return result;
 }
 
 /* Array is used to compare the orders of standard extensions quickly.  */

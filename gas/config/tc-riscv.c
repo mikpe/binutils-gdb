@@ -168,6 +168,7 @@ static const struct riscv_ext_version extended_ext_version_table[] =
   {"zvamo",   ISA_SPEC_CLASS_DRAFT, 0, 10},
   {"zvlsseg", ISA_SPEC_CLASS_DRAFT, 0, 10},
   {"zfh",     ISA_SPEC_CLASS_DRAFT, 0, 1},
+  {"svinval", ISA_SPEC_CLASS_DRAFT, 0, 1},
 
   /* Terminate the list.  */
   {NULL, 0, 0, 0}
@@ -360,6 +361,10 @@ riscv_extended_subset_supports (int insn_class)
       return riscv_subset_supports ("d") && riscv_subset_supports ("zfh");
     case INSN_CLASS_Q_AND_ZFH:
       return riscv_subset_supports ("q") && riscv_subset_supports ("zfh");
+
+    case INSN_CLASS_SVINVAL:
+      return riscv_subset_supports ("svinval");
+
     default:
       as_fatal ("internal: unknown INSN_CLASS (0x%x)", insn_class);
       return false;
