@@ -571,6 +571,7 @@ enum elf_target_id
   TILEGX_ELF_DATA,
   TILEPRO_ELF_DATA,
   RISCV_ELF_DATA,
+  /* PDP10_ELF_DATA, *//*TBD*/
   GENERIC_ELF_DATA
 };
 
@@ -2988,6 +2989,7 @@ extern char *elfcore_write_loongarch_lsx
   (bfd *, char *, int *, const void*, int);
 extern char *elfcore_write_loongarch_lasx
   (bfd *, char *, int *, const void*, int);
+/* PDP10 - TBD */
 
 /* Internal structure which holds information to be included in the
    PRPSINFO section of Linux core files.
