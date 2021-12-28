@@ -1,5 +1,7 @@
 -*- text -*-
 
+* Add support for the PDP-10 architecture with ELF-64 object files.
+
 * New versioned release of libsframe: libsframe.so.2.  This release introduces
   versioned symbols with version node name LIBSFRAME_2.0.  Some new symbols
   have been added to support the new flag SFRAME_F_FDE_FUNC_START_PCREL and
