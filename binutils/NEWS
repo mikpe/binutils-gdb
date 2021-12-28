@@ -1,5 +1,7 @@
 -*- text -*-
 
+* Add support for the PDP-10 architecture with ELF-64 object files.
+
 * Readelf now recognizes RISC-V GNU_PROPERTY_RISCV_FEATURE_1_CFI_SS and
   GNU_PROPERTY_RISCV_FEATURE_1_CFI_LP_UNLABELED for zicfiss and zicfilp
   extensions.
