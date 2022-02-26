@@ -23,6 +23,14 @@ AC_USE_SYSTEM_EXTENSIONS
 ACX_LARGEFILE
 AC_PROG_INSTALL
 
+HEXAGON_SIM=
+if test "$target" == "hexagon-unknown-none"; then
+HEXAGON_SIM=1
+cat >>confdefs.h <<_ACEOF
+#define HEXAGON_SIM 1
+_ACEOF
+fi
+
 LT_INIT
 
 AC_CHECK_FUNCS(setmode)

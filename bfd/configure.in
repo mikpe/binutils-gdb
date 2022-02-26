@@ -762,6 +762,8 @@ do
     bfd_elf32_powerpc_vec)	tb="$tb elf32-ppc.lo elf-vxworks.lo elf32.lo $elf" ;;
     bfd_elf32_powerpcle_vec)	tb="$tb elf32-ppc.lo elf-vxworks.lo elf32.lo $elf" ;;
     bfd_elf32_powerpc_vxworks_vec) tb="$tb elf32-ppc.lo elf-vxworks.lo elf32.lo $elf" ;;
+    bfd_elf32_littlehexagon_vec) tb="$tb hexagon-isa.lo elf32-hexagon.lo elf32.lo $elf" ;;
+    bfd_elf32_littleqdsp6_vec)	tb="$tb hexagon-isa.lo elf32-hexagon.lo elf32.lo $elf" ;;
     bfd_elf32_rx_le_vec)        tb="$tb elf32-rx.lo elf32.lo $elf" ;;
     bfd_elf32_rx_be_vec)        tb="$tb elf32-rx.lo elf32.lo $elf" ;;
     bfd_elf32_rx_be_ns_vec)     tb="$tb elf32-rx.lo elf32.lo $elf" ;;

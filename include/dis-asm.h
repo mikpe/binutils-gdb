@@ -301,6 +301,8 @@ extern int print_insn_rx		(bfd_vma, disassemble_info *);
 
 extern disassembler_ftype arc_get_disassembler (void *);
 extern disassembler_ftype cris_get_disassembler (bfd *);
+extern disassembler_ftype hexagon_get_disassembler (bfd *);
+extern disassembler_ftype hexagon_get_disassembler_from_mach (unsigned long, unsigned long);
 
 extern void print_i386_disassembler_options (FILE *);
 extern void print_mips_disassembler_options (FILE *);

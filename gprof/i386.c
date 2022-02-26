@@ -70,7 +70,7 @@ i386_find_call (Sym *parent, bfd_vma p_lowpc, bfd_vma p_highpc)
 	   *    a function.
 	   */
 
-	  destpc = bfd_get_32 (core_bfd, instructp + 1) + pc + 5;
+	  destpc = bfd_get_32 (core_bfd[0], instructp + 1) + pc + 5;
 	  if (hist_check_address (destpc))
 	    {
 	      child = sym_lookup (&symtab, destpc);

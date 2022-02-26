@@ -429,7 +429,7 @@ if { [istarget mips*-*-vxworks*] } {
     set ecoff [expr [istarget *-*-ecoff*] || [istarget *-*-ultrix*] || [istarget *-*-irix\[1-4\]*] ]
     set aout [expr [istarget *-*-bsd*] || [istarget *-*-openbsd*] ]
     set addr32 [expr [istarget mipstx39*-*-*] || [istarget mips-*-linux*] || [istarget mipsel-*-linux*] || [istarget mips*-*-ecoff]]
-    set has_newabi [expr [istarget *-*-irix6*] || [istarget mips64*-*-linux*]]
+    set has_newabi [expr [istarget *-*-irix6*] || [istarget mips64*-*-linux*] || [istarget "mips*-sde-elf*"]]
     set no_mips16 [expr !$elf]
     set no_micromips [expr !$elf]
 
@@ -494,30 +494,30 @@ if { [istarget mips*-*-vxworks*] } {
     run_dump_test "eret-2"
     run_dump_test "eret-3"
     run_dump_test_arches "24k-branch-delay-1" \
-	[mips_arch_list_matching mips1 !micromips]
+					[mips_arch_list_matching mips1]
     run_dump_test_arches "24k-triple-stores-1" \
-	[mips_arch_list_matching fpisa5 !octeon !micromips]
+				[mips_arch_list_matching fpisa5 !octeon]
     run_dump_test_arches "24k-triple-stores-2" \
-	[mips_arch_list_matching mips2 !micromips]
+					[mips_arch_list_matching mips2 !octeon]
     run_dump_test_arches "24k-triple-stores-3" \
-	[mips_arch_list_matching mips2 !micromips]
+					[mips_arch_list_matching mips2 !octeon]
     run_dump_test_arches "24k-triple-stores-4" \
-	[mips_arch_list_matching mips2 !micromips]
+					[mips_arch_list_matching mips2]
     run_dump_test_arches "24k-triple-stores-5" \
-	[mips_arch_list_matching mips1 !micromips]
+					[mips_arch_list_matching mips1]
     run_dump_test_arches "24k-triple-stores-6" \
-	[mips_arch_list_matching mips2 !micromips]
+					[mips_arch_list_matching mips2 !octeon]
     run_dump_test_arches "24k-triple-stores-7" \
-	[mips_arch_list_matching mips2 !micromips]
+					[mips_arch_list_matching mips2]
     run_dump_test_arches "24k-triple-stores-8" \
-	[mips_arch_list_matching mips1 !micromips]
+					[mips_arch_list_matching mips1]
     run_dump_test_arches "24k-triple-stores-9" \
-	[mips_arch_list_matching mips1 !micromips]
+					[mips_arch_list_matching mips1]
     run_dump_test_arches "24k-triple-stores-10" \
-	[mips_arch_list_matching mips1 !micromips]
+					[mips_arch_list_matching mips1]
     if $elf {
 	run_dump_test_arches "24k-triple-stores-11" \
-	    [mips_arch_list_matching mips1 !micromips]
+	    				[mips_arch_list_matching mips1]
     }
 
     if $elf {
@@ -646,8 +646,10 @@ if { [istarget mips*-*-vxworks*] } {
     if !$aout { run_dump_test "sb" }
     run_dump_test "trunc"
     if !$aout { run_dump_test "ulh" }
-    run_dump_test_arches "ulh2-eb"	[mips_arch_list_matching mips1]
-    run_dump_test_arches "ulh2-el"	[mips_arch_list_matching mips1]
+    run_dump_test_arches "ulh2-eb" [mips_arch_list_matching mips1 !mips32r2]
+    run_dump_test_arches "ulh2-el" [mips_arch_list_matching mips1 !mips32r2]
+    run_dump_test_arches "ulh3-eb" [mips_arch_list_matching mips32r2]
+    run_dump_test_arches "ulh3-el" [mips_arch_list_matching mips32r2]
     if $elf { run_dump_test "ulh-svr4pic" }
     if $elf { run_dump_test "ulh-xgot" }
     if !$aout {
@@ -659,13 +661,13 @@ if { [istarget mips*-*-vxworks*] } {
     }
     run_dump_test_arches "ulw2-eb" \
 				[mips_arch_list_matching mips1 !gpr_ilocks]
-    run_dump_test_arches "ulw2-eb-ilocks" [mips_arch_list_matching gpr_ilocks]
+    run_dump_test_arches "ulw2-eb-ilocks" [mips_arch_list_matching gpr_ilocks !octeon]
     run_dump_test_arches "ulw2-el" \
 				[mips_arch_list_matching mips1 !gpr_ilocks]
-    run_dump_test_arches "ulw2-el-ilocks" [mips_arch_list_matching gpr_ilocks]
+    run_dump_test_arches "ulw2-el-ilocks" [mips_arch_list_matching gpr_ilocks !octeon]
 
-    run_dump_test_arches "uld2-eb" [mips_arch_list_matching mips3]
-    run_dump_test_arches "uld2-el" [mips_arch_list_matching mips3]
+    run_dump_test_arches "uld2-eb" [mips_arch_list_matching mips3 !octeon]
+    run_dump_test_arches "uld2-el" [mips_arch_list_matching mips3 !octeon]
 
     # The mips16 test can only be run on ELF, because only ELF
     # supports the necessary mips16 reloc.
@@ -982,10 +984,18 @@ if { [istarget mips*-*-vxworks*] } {
     run_list_test_arches "octeon-ill" "" \
 					[mips_arch_list_matching octeon]
     run_dump_test_arches "octeon-pref"	[mips_arch_list_matching octeon]
+    run_list_test "octeon1" "-march=octeon -mocteon-useun"
+    run_dump_test "octeon2-un"
+    run_dump_test "octeon2-noun"
+    run_dump_test "octeon2-mix"
+    run_dump_test "octeon3"
+    run_dump_test "octeon_saa_saad"
 
     run_dump_test "smartmips"
-    run_dump_test "mips32-dsp"
-    run_dump_test "mips32-dspr2"
+    run_dump_test_arches "mips32-dsp"	[mips_arch_list_matching mips32r2 \
+					    !octeon]
+    run_dump_test_arches "mips32-dspr2"	[mips_arch_list_matching mips32r2 \
+					    !octeon]
     run_dump_test "mips64-dsp"
     run_dump_test "mips32-mt"
 
@@ -1048,6 +1058,10 @@ if { [istarget mips*-*-vxworks*] } {
     if { !$no_micromips } {
 	run_dump_test "micromips"
 	run_dump_test "micromips-trap"
+	run_dump_test "micromips-insn32"
+	run_dump_test "micromips-noinsn32"
+	run_list_test "micromips" "-mips32r2 -32 -mfp64 -minsn32" \
+	    "microMIPS for MIPS32r2 (instructions invalid in insn32 mode)"
 	run_list_test "micromips-size-0" \
 	    "-32 -march=mips64 -mmicromips" "microMIPS instruction size 0"
 	run_dump_test "micromips-size-1"

@@ -234,6 +234,9 @@
 /* Target OS. */
 #undef TARGET_OS
 
+/* Define if target needs CFI. */
+#undef TARGET_USE_CFIPOP
+
 /* Define if default target is PowerPC Solaris. */
 #undef TARGET_SOLARIS_COMMENT
 

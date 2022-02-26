@@ -234,6 +234,15 @@ static const arm_feature_set fpu_vfp_fp16 = ARM_FEATURE (0, FPU_VFP_EXT_FP16);
 static const arm_feature_set fpu_neon_ext_fma = ARM_FEATURE (0, FPU_NEON_EXT_FMA);
 static const arm_feature_set fpu_vfp_ext_fma = ARM_FEATURE (0, FPU_VFP_EXT_FMA);
 
+/* Return whether FEATURES indicates an M profile CPU, without getting
+   confused by ARM_ANY.  */
+static int
+m_profile_p (arm_feature_set features)
+{
+  return (ARM_CPU_HAS_FEATURE (features, arm_ext_v6m)
+	  && !ARM_CPU_HAS_FEATURE (features, arm_ext_v7a));
+}
+
 static int mfloat_abi_opt = -1;
 /* Record user cpu selection for object attributes.  */
 static arm_feature_set selected_cpu = ARM_ARCH_NONE;
@@ -1910,6 +1919,11 @@ parse_neon_el_struct_list (char **str, unsigned *pbase,
   const char *const incr_error = _("register stride must be 1 or 2");
   const char *const type_error = _("mismatched element/structure types in list");
   struct neon_typed_alias firsttype;
+
+  firsttype.defined = 0;
+  firsttype.index = -1;
+  firsttype.eltype.type = NT_invtype;
+  firsttype.eltype.size = -1;
 
   if (skip_past_char (&ptr, '{') == SUCCESS)
     leading_brace = 1;
@@ -4884,10 +4898,9 @@ parse_shifter_operand (char **str, int i)
 	  return FAIL;
 	}
 
-      /* Convert to decoded value.  md_apply_fix will put it back.  */
-      inst.reloc.exp.X_add_number
-	= (((inst.reloc.exp.X_add_number << (32 - value))
-	    | (inst.reloc.exp.X_add_number >> value)) & 0xffffffff);
+      /* Encode as specified.  */
+      inst.operands[i].imm = inst.reloc.exp.X_add_number | value << 7;
+      return SUCCESS;
     }
 
   inst.reloc.type = BFD_RELOC_ARM_IMMEDIATE;
@@ -5428,7 +5441,7 @@ parse_psr (char **str, bfd_boolean lhs)
   const struct asm_psr *psr;
   char *start;
   bfd_boolean is_apsr = FALSE;
-  bfd_boolean m_profile = ARM_CPU_HAS_FEATURE (selected_cpu, arm_ext_m);
+  bfd_boolean m_profile = m_profile_p (cpu_variant);
 
   /* PR gas/12698:  If the user has specified -march=all then m_profile will
      be TRUE, but we want to ignore it in this case as we are building for any
@@ -7018,7 +7031,11 @@ encode_arm_shifter_operand (int i)
       encode_arm_shift (i);
     }
   else
-    inst.instruction |= INST_IMMEDIATE;
+    {
+      inst.instruction |= INST_IMMEDIATE;
+      if (inst.reloc.type != BFD_RELOC_ARM_IMMEDIATE)
+	inst.instruction |= inst.operands[i].imm;
+    }
 }
 
 /* Subroutine of encode_arm_addr_mode_2 and encode_arm_addr_mode_3.  */
@@ -7786,11 +7803,30 @@ do_it (void)
     }
 }
 
+/* If there is only one register in the register list, return the register
+   number of that register.  Otherwise return -1.  */
+static int
+only_one_reg_in_list (int range)
+{
+  int i;
+
+  if (range <= 0 || range > 0xffff
+      || (range & (range - 1)) != 0)
+    return -1;
+
+  for (i = 0; i <= 15; i++)
+    if (range & (1 << i))
+      break;
+
+  return i;
+}
+
 static void
 do_ldmstm (void)
 {
   int base_reg = inst.operands[0].reg;
   int range = inst.operands[1].imm;
+  int one_reg;
 
   inst.instruction |= base_reg << 16;
   inst.instruction |= range;
@@ -7822,6 +7858,26 @@ do_ldmstm (void)
 		   && (range & ((1 << base_reg) - 1)))
 	    as_warn (_("if writeback register is in list, it must be the lowest reg in the list"));
 	}
+    }
+
+  /* When POP or PUSH only one register, we have to use different encodings.  */
+  one_reg = only_one_reg_in_list (range);
+  if (one_reg >= 0)
+    {
+      if ((inst.instruction & 0xfff0000) == 0x8bd0000)
+	{
+	  inst.instruction &= 0xf0000000;
+	  inst.instruction |= 0x49d0004;
+	}
+      else if ((inst.instruction & 0xfff0000) == 0x92d0000)
+	{
+	  inst.instruction &= 0xf0000000;
+	  inst.instruction |= 0x52d0004;
+	}
+      else
+	return;
+
+      inst.instruction |= one_reg << 12;
     }
 }
 
@@ -9392,6 +9448,7 @@ do_t_add_sub_w (void)
 
   /* If Rn is REG_PC, this is ADR; if Rn is REG_SP, then this
      is the SP-{plus,minus}-immediate form of the instruction.  */
+
   if (Rn == REG_SP)
     constraint (Rd == REG_PC, BAD_PC);
   else
@@ -11101,7 +11158,7 @@ do_t_mrs (void)
     {
       int flags = inst.operands[1].imm & (PSR_c|PSR_x|PSR_s|PSR_f|SPSR_BIT);
 
-      if (ARM_CPU_HAS_FEATURE (selected_cpu, arm_ext_m))
+      if (m_profile_p (selected_cpu))
 	constraint (flags != 0, _("selected processor does not support "
         	    "requested special purpose register"));
       else
@@ -11133,7 +11190,7 @@ do_t_msr (void)
   else
     flags = inst.operands[0].imm;
 
-  if (ARM_CPU_HAS_FEATURE (selected_cpu, arm_ext_m))
+  if (m_profile_p (selected_cpu))
     {
       int bits = inst.operands[0].imm & (PSR_c|PSR_x|PSR_s|PSR_f|SPSR_BIT);
 
@@ -11453,6 +11510,7 @@ do_t_rbit (void)
   inst.instruction |= Rd << 8;
   inst.instruction |= Rm << 16;
   inst.instruction |= Rm;
+  inst.instruction |= inst.operands[1].reg;
 }
 
 static void
@@ -20057,6 +20115,8 @@ md_pcrel_from_section (fixS * fixP, segT seg)
       if (fixP->fx_addsy
 	  && (S_GET_SEGMENT (fixP->fx_addsy) == seg)
 	  && !S_FORCE_RELOC (fixP->fx_addsy, TRUE)
+	  && (S_GET_SEGMENT (fixP->fx_addsy) == seg)
+	  && (!S_IS_EXTERNAL (fixP->fx_addsy))
 	  && ARM_IS_FUNC (fixP->fx_addsy)
  	  && ARM_CPU_HAS_FEATURE (selected_cpu, arm_ext_v5t))
  	base = fixP->fx_where + fixP->fx_frag->fr_address;
@@ -20068,6 +20128,8 @@ md_pcrel_from_section (fixS * fixP, segT seg)
       if (fixP->fx_addsy
 	  && (S_GET_SEGMENT (fixP->fx_addsy) == seg)
 	  && !S_FORCE_RELOC (fixP->fx_addsy, TRUE)
+	  && (S_GET_SEGMENT (fixP->fx_addsy) == seg)
+	  && (!S_IS_EXTERNAL (fixP->fx_addsy))
  	  && THUMB_IS_FUNC (fixP->fx_addsy)
  	  && ARM_CPU_HAS_FEATURE (selected_cpu, arm_ext_v5t))
  	base = fixP->fx_where + fixP->fx_frag->fr_address;
@@ -20079,6 +20141,8 @@ md_pcrel_from_section (fixS * fixP, segT seg)
       if (fixP->fx_addsy
 	  && (S_GET_SEGMENT (fixP->fx_addsy) == seg)
 	  && !S_FORCE_RELOC (fixP->fx_addsy, TRUE)
+	  && (S_GET_SEGMENT (fixP->fx_addsy) == seg)
+	  && (!S_IS_EXTERNAL (fixP->fx_addsy))
  	  && ARM_IS_FUNC (fixP->fx_addsy)
  	  && ARM_CPU_HAS_FEATURE (selected_cpu, arm_ext_v5t))
  	base = fixP->fx_where + fixP->fx_frag->fr_address;
@@ -20088,6 +20152,8 @@ md_pcrel_from_section (fixS * fixP, segT seg)
       if (fixP->fx_addsy
 	  && (S_GET_SEGMENT (fixP->fx_addsy) == seg)
 	  && !S_FORCE_RELOC (fixP->fx_addsy, TRUE)
+	  && (S_GET_SEGMENT (fixP->fx_addsy) == seg)
+	  && (!S_IS_EXTERNAL (fixP->fx_addsy))
  	  && THUMB_IS_FUNC (fixP->fx_addsy)
  	  && ARM_CPU_HAS_FEATURE (selected_cpu, arm_ext_v5t))
  	base = fixP->fx_where + fixP->fx_frag->fr_address;
@@ -20496,13 +20562,22 @@ md_apply_fix (fixS *	fixP,
 	    }
 	}
 
-      newimm = encode_arm_immediate (value);
       temp = md_chars_to_number (buf, INSN_SIZE);
 
-      /* If the instruction will fail, see if we can fix things up by
-	 changing the opcode.  */
-      if (newimm == (unsigned int) FAIL
-	  && (newimm = negate_data_op (&temp, value)) == (unsigned int) FAIL)
+      /* If the offset is negative, we should use encoding A2 for ADR.  */
+      if ((temp & 0xfff0000) == 0x28f0000 && value < 0)
+	newimm = negate_data_op (&temp, value);
+      else
+	{
+	  newimm = encode_arm_immediate (value);
+
+	  /* If the instruction will fail, see if we can fix things up by
+	     changing the opcode.  */
+	  if (newimm == (unsigned int) FAIL)
+	    newimm = negate_data_op (&temp, value);
+	}
+
+      if (newimm == (unsigned int) FAIL)
 	{
 	  as_bad_where (fixP->fx_file, fixP->fx_line,
 			_("invalid constant (%lx) after fixup"),
@@ -23686,20 +23761,26 @@ aeabi_set_public_attributes (void)
     aeabi_set_attribute_int (Tag_THUMB_ISA_use,
 	ARM_CPU_HAS_FEATURE (flags, arm_arch_t2) ? 2 : 1);
 
-  /* Tag_VFP_arch.  */
+  /* Tag_FP_arch.  */
   if (ARM_CPU_HAS_FEATURE (flags, fpu_vfp_ext_fma))
-    aeabi_set_attribute_int (Tag_VFP_arch,
+    aeabi_set_attribute_int (Tag_FP_arch,
 			     ARM_CPU_HAS_FEATURE (flags, fpu_vfp_ext_d32)
 			     ? 5 : 6);
   else if (ARM_CPU_HAS_FEATURE (flags, fpu_vfp_ext_d32))
-    aeabi_set_attribute_int (Tag_VFP_arch, 3);
+    aeabi_set_attribute_int (Tag_FP_arch, 3);
   else if (ARM_CPU_HAS_FEATURE (flags, fpu_vfp_ext_v3xd))
-    aeabi_set_attribute_int (Tag_VFP_arch, 4);
+    aeabi_set_attribute_int (Tag_FP_arch, 4);
   else if (ARM_CPU_HAS_FEATURE (flags, fpu_vfp_ext_v2))
-    aeabi_set_attribute_int (Tag_VFP_arch, 2);
+    aeabi_set_attribute_int (Tag_FP_arch, 2);
   else if (ARM_CPU_HAS_FEATURE (flags, fpu_vfp_ext_v1)
            || ARM_CPU_HAS_FEATURE (flags, fpu_vfp_ext_v1xd))
-    aeabi_set_attribute_int (Tag_VFP_arch, 1);
+    aeabi_set_attribute_int (Tag_FP_arch, 1);
+
+  /* Tag_ABI_HardFP_use.  */
+  if (ARM_CPU_HAS_FEATURE (flags, fpu_vfp_ext_v1xd)
+      && !ARM_CPU_HAS_FEATURE (flags, fpu_vfp_ext_v1))
+    aeabi_set_attribute_int (Tag_ABI_HardFP_use, 1);
+
 
   /* Tag_ABI_HardFP_use.  */
   if (ARM_CPU_HAS_FEATURE (flags, fpu_vfp_ext_v1xd)
@@ -23718,9 +23799,9 @@ aeabi_set_public_attributes (void)
       (Tag_Advanced_SIMD_arch, (ARM_CPU_HAS_FEATURE (flags, fpu_neon_ext_fma)
 				? 2 : 1));
   
-  /* Tag_VFP_HP_extension (formerly Tag_NEON_FP16_arch).  */
+  /* Tag_FP_HP_extension (formerly Tag_NEON_FP16_arch).  */
   if (ARM_CPU_HAS_FEATURE (flags, fpu_vfp_fp16))
-    aeabi_set_attribute_int (Tag_VFP_HP_extension, 1);
+    aeabi_set_attribute_int (Tag_FP_HP_extension, 1);
 
   /* Tag_DIV_use.  */
   if (ARM_CPU_HAS_FEATURE (flags, arm_ext_adiv))
@@ -23974,7 +24055,7 @@ arm_convert_symbolic_attribute (const char *name)
       T (Tag_ARM_ISA_use),
       T (Tag_THUMB_ISA_use),
       T (Tag_FP_arch),
-      T (Tag_VFP_arch),
+      T (Tag_VFP_arch),  /* Old name for Tag_FP_arch.  */
       T (Tag_WMMX_arch),
       T (Tag_Advanced_SIMD_arch),
       T (Tag_PCS_config),
@@ -23989,9 +24070,9 @@ arm_convert_symbolic_attribute (const char *name)
       T (Tag_ABI_FP_user_exceptions),
       T (Tag_ABI_FP_number_model),
       T (Tag_ABI_align_needed),
-      T (Tag_ABI_align8_needed),
+      T (Tag_ABI_align8_needed), /* Old name for Tag_ABI_align_needed.  */
       T (Tag_ABI_align_preserved),
-      T (Tag_ABI_align8_preserved),
+      T (Tag_ABI_align8_preserved), /* Old name for Tag_ABI_align_preserved.  */
       T (Tag_ABI_enum_size),
       T (Tag_ABI_HardFP_use),
       T (Tag_ABI_VFP_args),

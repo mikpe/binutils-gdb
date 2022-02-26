@@ -44,6 +44,7 @@ HFILES = \
 	fr30-desc.h fr30-opc.h \
 	frv-desc.h frv-opc.h \
 	h8500-opc.h \
+	hexagon.h \
 	i386-init.h \
 	i386-opc.h \
 	i386-tbl.h \
@@ -107,6 +108,8 @@ TARGET_LIBOPCODES_CFILES = \
 	frv-opc.c \
 	h8300-dis.c \
 	h8500-dis.c \
+	hexagon-dis.c \
+	hexagon-opc.c \
 	hppa-dis.c \
 	i370-dis.c \
 	i370-opc.c \
@@ -163,6 +166,7 @@ TARGET_LIBOPCODES_CFILES = \
 	mips-dis.c \
 	mips-opc.c \
 	mips16-opc.c \
+	micromips-opc.c \
 	mmix-dis.c \
 	mmix-opc.c \
 	moxie-dis.c \

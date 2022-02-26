@@ -123,6 +123,7 @@ bb_read_rec (FILE *ifp, const char *filename)
   unsigned int nblocks, b;
   bfd_vma addr, ncalls;
   Sym *sym;
+  unsigned long long l_ncalls;
 
   if (gmon_io_read_32 (ifp, &nblocks))
     {
@@ -131,7 +132,7 @@ bb_read_rec (FILE *ifp, const char *filename)
       done (1);
     }
 
-  nblocks = bfd_get_32 (core_bfd, (bfd_byte *) & nblocks);
+  nblocks = bfd_get_32 (core_bfd[0], (bfd_byte *) & nblocks);
   if (gmon_file_version == 0)
     fskip_string (ifp);
 
@@ -153,12 +154,30 @@ bb_read_rec (FILE *ifp, const char *filename)
 	      done (1);
 	    }
 	}
-      else if (gmon_io_read_vma (ifp, &addr)
-	       || gmon_io_read_vma (ifp, &ncalls))
-	{
-	  perror (filename);
-	  done (1);
+      else if (gmon_file_version == 1)
+        {
+          if (gmon_io_read_vma (ifp, &addr)
+	           || gmon_io_read_vma (ifp, &ncalls))
+	    {
+	      perror (filename);
+	      done (1);
+	    }
 	}
+      else
+        {
+	  if(gmon_io_read_vma (ifp, &addr))
+	    {
+	      perror (filename);
+	      done (1);
+	    }
+
+	  if ((l_ncalls = readCompressed(ifp)) == (unsigned long long) ~0)
+	    {
+	      perror (filename);
+	      done (1);
+	    }
+	  ncalls = (bfd_vma) l_ncalls;
+        }
 
       /* Basic-block execution counts are meaningful only if we're
 	 profiling at the line-by-line level:  */

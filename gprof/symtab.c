@@ -29,7 +29,8 @@
 
 static int cmp_addr (const PTR, const PTR);
 
-Sym_Table symtab;
+Sym_Table symtabs[MAX_NUM_COREFILES];
+Sym_Table symtab;			// Merged symbol table
 
 
 /* Initialize a symbol (so it's empty).  */
@@ -48,6 +49,59 @@ sym_init (Sym *sym)
   sym->cg.prop.child = 0.0;
 }
 
+/* Merge all of the symtabs into a single symtab. */
+
+void
+mergeSymtabs(int num_tabs)
+{
+  unsigned int ndx = 0, ndx2 = 0;
+  int i;
+  int total_len = 0;
+  bfd_vma highest_addr = (bfd_vma) 0;
+  bfd_vma lowest_addr = (bfd_vma) ~0;
+
+  for(i = 0; i < num_tabs; i++)
+    {
+      total_len += symtabs[i].len;
+    }
+
+  symtab.len = 0;
+  symtab.base = (Sym *) malloc ((total_len + 2) * sizeof (Sym));
+
+  for(i = 0; i < num_tabs; i++)
+    {
+      for(ndx = 0; ndx < symtabs[i].len; ndx++)
+        {
+	  if(strcmp (symtabs[i].base[ndx].name, "<locore>") == 0) continue;
+	  if(strcmp (symtabs[i].base[ndx].name, "<hicore>") == 0) continue;
+	  if(symtabs[i].base[ndx].end_addr > highest_addr) highest_addr = symtabs[i].base[ndx].end_addr;
+	  if(symtabs[i].base[ndx].addr < lowest_addr) lowest_addr = symtabs[i].base[ndx].addr;
+	  symtab.base[ndx2++] = symtabs[i].base[ndx];
+	  symtab.len++;
+	}
+      free(symtabs[i].base);
+    }
+
+  /* Create sentinels.  */
+  if(lowest_addr != 0)
+    {
+      sym_init (&symtab.base[ndx2]);
+      symtab.base[ndx2].name = "<locore>";
+      symtab.base[ndx2].addr = 0;
+      symtab.base[ndx2].end_addr = lowest_addr - 1;
+      ++ndx2;
+      symtab.len++;
+    }
+
+  sym_init (&symtab.base[ndx2]);
+  symtab.base[ndx2].name = "<hicore>";
+  symtab.base[ndx2].addr = highest_addr + 1;
+  symtab.base[ndx2].end_addr = ~(bfd_vma) 0;
+  ++ndx2;
+  symtab.len++;
+
+  symtab.limit = &(symtab.base[symtab.len - 1]);
+}
 
 /* Compare the function entry-point of two symbols and return <0, =0,
    or >0 depending on whether the left value is smaller than, equal

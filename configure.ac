@@ -877,6 +877,14 @@ case "${target}" in
   h8500-*-*)
     noconfigdirs="$noconfigdirs target-libgloss"
     ;;
+  hexagon-*-linux-*)
+    noconfigdirs="$noconfigdirs tcl ${libgcj}"
+    noconfigdirs="$noconfigdirs "
+    ;;
+  hexagon-*-*)
+    noconfigdirs="$noconfigdirs ${libgcj}"
+    noconfigdirs="$noconfigdirs "
+    ;;
   hppa1.1-*-osf* | hppa1.1-*-bsd* )
     ;;
   hppa*64*-*-linux*)
@@ -988,9 +996,8 @@ case "${target}" in
     noconfigdirs="$noconfigdirs gprof"
     ;;
   mips*-sde-elf*)
-    if test x$with_newlib = xyes; then
-      noconfigdirs="$noconfigdirs gprof"
-    fi
+    # add sde-conv host tool
+    configdirs="${configdirs} convert"
     ;;
   mips*-*-irix5*)
     noconfigdirs="$noconfigdirs gprof target-libgloss"

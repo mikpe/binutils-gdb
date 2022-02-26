@@ -4,4 +4,4 @@
  +.: 0+1 +1 +TLS +LOCAL +DEFAULT +. tls_object
  +..: 0+2 +1 +NOTYPE +LOCAL +DEFAULT +. notype
  +..: 0+3 +1 +OBJECT +UNIQUE +DEFAULT +. unique_global
- +..: 0+1 +1 +(COMMON|OBJECT) +GLOBAL +DEFAULT +COM common
+ +..: 0+1 +1 +(COMMON|OBJECT) +GLOBAL +DEFAULT +(COM|PRC.0x[0-9a-f]+.) common

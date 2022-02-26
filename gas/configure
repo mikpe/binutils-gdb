@@ -11941,6 +11941,12 @@ _ACEOF
 
     generic_target=${cpu_type}-${target_vendor}-${target_os}
     case ${generic_target} in
+      hexagon*-linux*)
+
+$as_echo "#define TARGET_USE_CFIPOP 1" >>confdefs.h
+
+	;;
+
       i386-*-sco3.2v5*)
 	if test ${this_target} = $target; then
 

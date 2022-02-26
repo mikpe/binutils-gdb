@@ -38,6 +38,7 @@ CPU_DOCS = \
 	c-d10v.texi \
 	c-cris.texi \
 	c-h8300.texi \
+	c-hexagon.texi \
 	c-hppa.texi \
 	c-i370.texi \
 	c-i386.texi \

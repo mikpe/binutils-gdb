@@ -22,6 +22,8 @@
 #ifndef symtab_h
 #define symtab_h
 
+#include "corefile.h"
+
 /* For a profile to be intelligible to a human user, it is necessary
    to map code-addresses into source-code information.  Source-code
    information can be any combination of: (i) function-name, (ii)
@@ -110,6 +112,7 @@ typedef struct
   }
 Sym_Table;
 
+extern Sym_Table symtabs[MAX_NUM_COREFILES];	/* The symbol table.  */
 extern Sym_Table symtab;	/* The symbol table.  */
 
 extern void sym_init        (Sym *);
@@ -119,5 +122,6 @@ extern Sym *dbg_sym_lookup  (Sym_Table *, bfd_vma);
 #endif
 extern Sym *sym_lookup      (Sym_Table *, bfd_vma);
 extern void find_call       (Sym *, bfd_vma, bfd_vma);
+extern void mergeSymtabs    (int);
 
 #endif /* symtab_h */

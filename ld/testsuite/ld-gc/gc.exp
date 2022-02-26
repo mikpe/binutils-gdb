@@ -24,8 +24,12 @@ if ![check_gc_sections_available] {
     return
 }
 
-set cflags "-ffunction-sections -fdata-sections"
+set cflags "-fno-unwind-tables -ffunction-sections -fdata-sections"
 set objfile "tmpdir/gc.o"
+
+if { [istarget hexagon*] } {
+    append cflags " -G0"
+}
 
 if [istarget powerpc64*-*-*] {
     # otherwise with -mcmodel=medium gcc we get XPASSes.

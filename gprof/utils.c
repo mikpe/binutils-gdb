@@ -52,7 +52,7 @@ print_name_only (Sym *self)
     {
       if (!bsd_style_output && demangle)
 	{
-	  demangled = bfd_demangle (core_bfd, name, DMGL_ANSI | DMGL_PARAMS);
+	  demangled = bfd_demangle (core_bfd[0], name, DMGL_ANSI | DMGL_PARAMS);
 	  if (demangled)
 	    name = demangled;
 	}

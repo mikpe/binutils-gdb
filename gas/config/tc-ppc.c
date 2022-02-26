@@ -1242,6 +1242,7 @@ PowerPC options:\n\
 -m440                   generate code for PowerPC 440\n\
 -m464                   generate code for PowerPC 464\n\
 -m476                   generate code for PowerPC 476\n\
+-m476			generate code for PowerPC 476\n\
 -m7400, -m7410, -m7450, -m7455\n\
                         generate code for PowerPC 7400/7410/7450/7455\n\
 -m750cl                 generate code for PowerPC 750cl\n"));
@@ -1263,8 +1264,9 @@ PowerPC options:\n\
 -mvsx                   generate code for Vector-Scalar (VSX) instructions\n\
 -me300                  generate code for PowerPC e300 family\n\
 -me500, -me500x2        generate code for Motorola e500 core complex\n\
--me500mc,               generate code for Freescale e500mc core complex\n\
--me500mc64,             generate code for Freescale e500mc64 core complex\n\
+-me500mc,		generate code for Freescale e500mc core complex\n\
+-me500mc64,		generate code for Freescale e500mc64 core complex\n\
+-me5500,		generate code for Freescale e5500 core complex\n\
 -mspe                   generate code for Motorola SPE instructions\n\
 -mtitan                 generate code for AppliedMicro Titan core complex\n\
 -mregnames              Allow symbolic names for registers\n\

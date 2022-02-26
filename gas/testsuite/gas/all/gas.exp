@@ -64,7 +64,8 @@ case $target_triplet in {
 gas_test "eqv-ok.s" "" "" ".eqv support"
 gas_test_error "eqv-bad.s" "" ".eqv for symbol already set"
 
-if { ![istarget "bfin-*-*"] } then {
+if { ![istarget "bfin-*-*"] && \
+     ![istarget hexagon*] } then {
     gas_test "assign-ok.s" "" "" "== assignment support"
 }
 gas_test_error "assign-bad.s" "" "== assignment for symbol already set"
@@ -346,7 +347,8 @@ if {  ([istarget "i*86-*-*pe*"] && ![istarget "i*86-*-openbsd*"]) \
   gas_test "fastcall.s" ""   "" "fastcall labels"
 }
 
-if { ![istarget "bfin-*-*"] } then {
+if { ![istarget "bfin-*-*"] && \
+     ![istarget hexagon*] } then {
     run_dump_test assign
 }
 run_dump_test sleb128

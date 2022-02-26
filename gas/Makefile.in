@@ -388,6 +388,7 @@ TARGET_CPU_CFILES = \
 	config/tc-fr30.c \
 	config/tc-frv.c \
 	config/tc-h8300.c \
+ 	config/tc-hexagon.c \
 	config/tc-hppa.c \
 	config/tc-ia64.c \
 	config/tc-i370.c \
@@ -454,6 +455,7 @@ TARGET_CPU_HFILES = \
 	config/tc-fr30.h \
 	config/tc-frv.h \
 	config/tc-h8300.h \
+	config/tc-hexagon.h \
 	config/tc-hppa.h \
 	config/tc-ia64.h \
 	config/tc-i370.h \
@@ -799,6 +801,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-fr30.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-frv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-h8300.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-hexagon.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-hppa.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-i370.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-i386.Po@am__quote@
@@ -1068,6 +1071,20 @@ tc-h8300.obj: config/tc-h8300.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='config/tc-h8300.c' object='tc-h8300.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o tc-h8300.obj `if test -f 'config/tc-h8300.c'; then $(CYGPATH_W) 'config/tc-h8300.c'; else $(CYGPATH_W) '$(srcdir)/config/tc-h8300.c'; fi`
+
+tc-hexagon.o: config/tc-hexagon.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT tc-hexagon.o -MD -MP -MF $(DEPDIR)/tc-hexagon.Tpo -c -o tc-hexagon.o `test -f 'config/tc-hexagon.c' || echo '$(srcdir)/'`config/tc-hexagon.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/tc-hexagon.Tpo $(DEPDIR)/tc-hexagon.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='config/tc-hexagon.c' object='tc-hexagon.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o tc-hexagon.o `test -f 'config/tc-hexagon.c' || echo '$(srcdir)/'`config/tc-hexagon.c
+
+tc-hexagon.obj: config/tc-hexagon.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT tc-hexagon.obj -MD -MP -MF $(DEPDIR)/tc-hexagon.Tpo -c -o tc-hexagon.obj `if test -f 'config/tc-hexagon.c'; then $(CYGPATH_W) 'config/tc-hexagon.c'; else $(CYGPATH_W) '$(srcdir)/config/tc-hexagon.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/tc-hexagon.Tpo $(DEPDIR)/tc-hexagon.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='config/tc-hexagon.c' object='tc-hexagon.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o tc-hexagon.obj `if test -f 'config/tc-hexagon.c'; then $(CYGPATH_W) 'config/tc-hexagon.c'; else $(CYGPATH_W) '$(srcdir)/config/tc-hexagon.c'; fi`
 
 tc-hppa.o: config/tc-hppa.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT tc-hppa.o -MD -MP -MF $(DEPDIR)/tc-hppa.Tpo -c -o tc-hppa.o `test -f 'config/tc-hppa.c' || echo '$(srcdir)/'`config/tc-hppa.c

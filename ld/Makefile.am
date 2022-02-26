@@ -144,6 +144,7 @@ ALL_EMULATION_SOURCES = \
 	earmelf_linux.c \
 	earmelf_linux_eabi.c \
 	earmelf_nbsd.c \
+	earmelf_samsung_nucleus.c \
 	earmelf_vxworks.c \
 	earmelfb.c \
 	earmelfb_linux.c \
@@ -181,6 +182,7 @@ ALL_EMULATION_SOURCES = \
 	ed30velf.c \
 	edelta68.c \
 	eelf32_dlx.c \
+	eelf32_hexagon.c \
 	eelf32_i860.c \
 	eelf32_i960.c \
 	eelf32_sparc.c \
@@ -206,6 +208,12 @@ ALL_EMULATION_SOURCES = \
 	eelf32btsmipn32_fbsd.c \
 	eelf32cr16.c \
 	eelf32cr16c.c \
+	eelf32ebocteon.c \
+	eelf32elocteon.c \
+	eelf32ebocteonn32.c \
+	eelf32elocteonn32.c \
+	eelf64ebocteon.c \
+	eelf64elocteon.c \
 	eelf32crx.c \
 	eelf32ebmip.c \
 	eelf32ebmipvxworks.c \
@@ -472,10 +480,12 @@ ALL_64_EMULATION_SOURCES = \
 	eelf64bmip.c \
 	eelf64btsmip.c \
 	eelf64btsmip_fbsd.c \
+	eelf64btsmip_sym32.c \
 	eelf64hppa.c \
 	eelf64lppc.c \
 	eelf64ltsmip.c \
 	eelf64ltsmip_fbsd.c \
+	eelf64ltsmip_sym32.c \
 	eelf64mmix.c \
 	eelf64ppc.c \
 	eelf64tilegx.c \
@@ -708,6 +718,11 @@ earmelf_nbsd.c: $(srcdir)/emulparams/armelf_nbsd.sh \
   $(ELF_DEPS) $(srcdir)/emultempl/armelf.em \
   $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
 	${GENSCRIPTS} armelf_nbsd "$(tdir_armelf_nbsd)"
+earmelf_samsung_nucleus.c: $(srcdir)/emulparams/armelf_samsung_nucleus.sh \
+  $(srcdir)/emulparams/armelf.sh \
+  $(ELF_DEPS) $(srcdir)/emultempl/armelf.em \
+  $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+	${GENSCRIPTS} armelf_samsung_nucleus "$(tdir_armelf)"
 earmelf_vxworks.c: $(srcdir)/emulparams/armelf_vxworks.sh \
   $(srcdir)/emulparams/vxworks.sh $(srcdir)/emulparams/armelf.sh \
   $(ELF_DEPS) $(srcdir)/emultempl/vxworks.em \
@@ -931,6 +946,35 @@ eelf32bfinfd.c: $(srcdir)/emulparams/elf32bfinfd.sh \
   $(ELF_DEPS) $(srcdir)/emultempl/bfin.em \
   $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
 	${GENSCRIPTS} elf32bfinfd "$(tdir_elf32bfinfd)" elf32bfinfd
+eelf32ebocteon.c: $(srcdir)/emulparams/elf32ebocteon.sh \
+  $(srcdir)/emulparams/elf32bmip.sh \
+  $(srcdir)/emultempl/elf32.em $(srcdir)/emultempl/octeonelf.em \
+  $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+	${GENSCRIPTS} elf32ebocteon "$(tdir_elf32ebocteon)"
+eelf32elocteon.c: $(srcdir)/emulparams/elf32elocteon.sh \
+  $(srcdir)/emulparams/elf32ebocteon.sh $(srcdir)/emulparams/elf32bmip.sh \
+  $(srcdir)/emultempl/elf32.em $(srcdir)/emultempl/octeonelf.em \
+  $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+	${GENSCRIPTS} elf32elocteon "$(tdir_elf32elocteon)"
+eelf32ebocteonn32.c: $(srcdir)/emulparams/elf32ebocteonn32.sh \
+  $(srcdir)/emultempl/elf32.em $(srcdir)/emultempl/octeonelf.em \
+  $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+	${GENSCRIPTS} elf32ebocteonn32 "$(tdir_elf32ebocteonn32)"
+eelf32elocteonn32.c: $(srcdir)/emulparams/elf32elocteonn32.sh \
+  $(srcdir)/emultempl/elf32.em $(srcdir)/emultempl/octeonelf.em \
+  $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+	${GENSCRIPTS} elf32elocteonn32 "$(tdir_elf32elocteonn32)"
+eelf64ebocteon.c: $(srcdir)/emulparams/elf64ebocteon.sh \
+  $(srcdir)/emulparams/elf32ebocteon.sh \
+  $(srcdir)/emultempl/elf32.em $(srcdir)/emultempl/octeonelf.em \
+  $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+	${GENSCRIPTS} elf64ebocteon "$(tdir_elf64ebocteon)"
+eelf64elocteon.c: $(srcdir)/emulparams/elf64elocteon.sh \
+  $(srcdir)/emulparams/elf64ebocteon.sh \
+  $(srcdir)/emulparams/elf32ebocteon.sh \
+  $(srcdir)/emultempl/elf32.em $(srcdir)/emultempl/octeonelf.em \
+  $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+	${GENSCRIPTS} elf64elocteon "$(tdir_elf64elocteon)"
 eelf32bmip.c: $(srcdir)/emulparams/elf32bmip.sh $(ELF_DEPS) \
   $(srcdir)/emultempl/mipself.em $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
 	${GENSCRIPTS} elf32bmip "$(tdir_elf32bmip)"
@@ -1171,6 +1215,12 @@ eelf32xtensa.c: $(srcdir)/emulparams/elf32xtensa.sh $(ELF_DEPS) \
   $(BFDDIR)/elf-bfd.h $(BFDDIR)/libbfd.h $(INCDIR)/elf/xtensa.h \
   $(srcdir)/scripttempl/elfxtensa.sc ${GEN_DEPENDS}
 	${GENSCRIPTS} elf32xtensa "$(tdir_elf32xtensa)"
+eelf64ltsmip_sym32.c: $(srcdir)/emulparams/elf64ltsmip_sym32.sh \
+  $(srcdir)/emulparams/elf64ltsmip.sh \
+  $(srcdir)/emulparams/elf64btsmip.sh $(srcdir)/emulparams/elf64bmip-defs.sh \
+  $(srcdir)/emulparams/elf32bmipn32-defs.sh $(ELF_DEPS) \
+  $(srcdir)/emultempl/mipself.em $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+	${GENSCRIPTS} elf64ltsmip_sym32 "$(tdir_elf64ltsmip_sym32)"
 eelf_i386.c: $(srcdir)/emulparams/elf_i386.sh \
   $(ELF_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
 	${GENSCRIPTS} elf_i386 "$(tdir_elf_i386)"
@@ -1268,6 +1318,10 @@ eh8500m.c: $(srcdir)/emulparams/h8500m.sh \
 eh8500s.c: $(srcdir)/emulparams/h8500s.sh \
   $(srcdir)/emultempl/generic.em $(srcdir)/scripttempl/h8500s.sc ${GEN_DEPENDS}
 	${GENSCRIPTS} h8500s "$(tdir_h8500s)"
+ehexagonelf.c: $(srcdir)/emulparams/hexagonelf.sh \
+  $(srcdir)/emultempl/elf32.em $(srcdir)/emultempl/hexagonelf.em \
+  $(srcdir)/scripttempl/hexagon.sc ${GEN_DEPENDS}
+	${GENSCRIPTS} hexagonelf "$(tdir_hexagonelf)"
 ehp300bsd.c: $(srcdir)/emulparams/hp300bsd.sh \
   $(srcdir)/emultempl/generic.em $(srcdir)/scripttempl/aout.sc ${GEN_DEPENDS}
 	${GENSCRIPTS} hp300bsd "$(tdir_hp300bsd)"
@@ -1946,6 +2000,12 @@ eelf64btsmip_fbsd.c: $(srcdir)/emulparams/elf64btsmip_fbsd.sh \
   $(srcdir)/emulparams/elf32bmipn32-defs.sh $(ELF_DEPS) \
   $(srcdir)/emultempl/mipself.em $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
 	${GENSCRIPTS} elf64btsmip_fbsd "$(tdir_elf64btsmip_fbsd)"
+eelf64btsmip_sym32.c: $(srcdir)/emulparams/elf64btsmip_sym32.sh \
+  $(srcdir)/emulparams/elf64btsmip.sh \
+  $(srcdir)/emulparams/elf64bmip-defs.sh \
+  $(srcdir)/emulparams/elf32bmipn32-defs.sh $(ELF_DEPS) \
+  $(srcdir)/emultempl/mipself.em $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+	${GENSCRIPTS} elf64btsmip_sym32 "$(tdir_elf64btsmip_sym32)"
 eelf64hppa.c: $(srcdir)/emulparams/elf64hppa.sh \
   $(ELF_DEPS) $(srcdir)/scripttempl/elf64hppa.sc ${GEN_DEPENDS}
 	${GENSCRIPTS} elf64hppa "$(tdir_elf64hppa)"

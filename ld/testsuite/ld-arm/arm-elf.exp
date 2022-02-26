@@ -419,6 +419,9 @@ set armelftests {
     {"abs call" "-T arm.ld" "" {abs-call-1.s}
      {{objdump -d abs-call-1.d}}
      "abs-call-1"}
+    {"ARMv4t Thumb glue via GOT" "-T arm.ld" "" {thumb1-got-glue.s}
+     {{objdump "-D -j .text -j .got" thumb1-got-glue.d}}
+     "thumb1-got-glue"}
 }
 
 run_ld_link_tests $armelftests

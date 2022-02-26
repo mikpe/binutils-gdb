@@ -68,6 +68,8 @@ arm-*-rtems*)		targ_emul=armelf ;;
 armeb-*-elf)		targ_emul=armelfb ;;
 arm-*-elf | arm*-*-eabi*)
 	  		targ_emul=armelf ;;
+arm*-samsung-nucleuseabi)     targ_emul=armelf_samsung_nucleus ;;
+arm*-*-nucleuseabi)     targ_emul=armelf ;;
 arm*-*-symbianelf*)     targ_emul=armsymbian;;
 arm-*-kaos*)		targ_emul=armelf ;;
 arm9e-*-elf)		targ_emul=armelf ;;
@@ -154,6 +156,7 @@ h8500-*-hms* | h8500-*-coff* | h8500-*-rtems*)
 			targ_emul=h8500
 			targ_extra_emuls="h8500s h8500b h8500m h8500c"
 			;;
+hexagon-*-*)		targ_emul=hexagonelf ;;
 hppa*64*-*-linux-*)	targ_emul=hppa64linux ;;
 hppa*64*-hpux*)		targ_emul=elf64hppa ;;
 hppa*-*-linux-*)	targ_emul=hppalinux ;;
@@ -383,6 +386,9 @@ mips*vr4100el-*-elf*)	targ_emul=elf32l4300 ;;
 mips*vr4100-*-elf*)	targ_emul=elf32b4300 ;;
 mips*vr5000el-*-elf*)	targ_emul=elf32l4300 ;;
 mips*vr5000-*-elf*)	targ_emul=elf32b4300 ;;
+mips64octeon*-*-elf*) targ_emul=elf32ebocteon
+			targ_extra_emuls="elf32elocteon elf32ebocteonn32 elf32elocteonn32 elf64ebocteon elf64elocteon"
+			;;
 mips*el-sde-elf*)	targ_emul=elf32ltsmip
 			targ_extra_emuls="elf32btsmip elf32ltsmipn32 elf64ltsmip elf32btsmipn32 elf64btsmip" ;;
 mips*-sde-elf*)		targ_emul=elf32btsmip
@@ -395,17 +401,21 @@ mips*el-*-vxworks*)	targ_emul=elf32elmipvxworks
 mips*-*-vxworks*)	targ_emul=elf32ebmipvxworks
 		        targ_extra_emuls="elf32elmipvxworks" ;;
 mips*-*-windiss)	targ_emul=elf32mipswindiss ;;
+mips64el-sicortex-linux-gnu)
+			targ_emul=elf64ltsmip
+			targ_extra_emuls="elf32ltsmipn32 elf32btsmipn32 elf32ltsmip elf32btsmip elf64btsmip"
+			targ_extra_libpath=$targ_extra_emuls ;;
 mips64*el-*-linux-*)	targ_emul=elf32ltsmipn32
-			targ_extra_emuls="elf32btsmipn32 elf32ltsmip elf32btsmip elf64ltsmip elf64btsmip"
+			targ_extra_emuls="elf32btsmipn32 elf32ltsmip elf32btsmip elf64ltsmip elf64ltsmip_sym32 elf64btsmip elf64btsmip_sym32"
 			targ_extra_libpath=$targ_extra_emuls ;;
 mips64*-*-linux-*)	targ_emul=elf32btsmipn32
-			targ_extra_emuls="elf32ltsmipn32 elf32btsmip elf32ltsmip elf64btsmip elf64ltsmip"
+			targ_extra_emuls="elf32ltsmipn32 elf32btsmip elf32ltsmip elf64btsmip elf64btsmip_sym32 elf64ltsmip elf64ltsmip_sym32"
 			targ_extra_libpath=$targ_extra_emuls ;;
 mips*el-*-linux-*)	targ_emul=elf32ltsmip
-			targ_extra_emuls="elf32btsmip elf32ltsmipn32 elf64ltsmip elf32btsmipn32 elf64btsmip"
+			targ_extra_emuls="elf32btsmip elf32ltsmipn32 elf64ltsmip elf64ltsmip_sym32 elf32btsmipn32 elf64btsmip elf64btsmip_sym32"
 			targ_extra_libpath=$targ_extra_emuls ;;
 mips*-*-linux-*)	targ_emul=elf32btsmip
-			targ_extra_emuls="elf32ltsmip elf32btsmipn32 elf64btsmip elf32ltsmipn32 elf64ltsmip"
+			targ_extra_emuls="elf32ltsmip elf32btsmipn32 elf64btsmip elf64btsmip_sym32 elf32ltsmipn32 elf64ltsmip elf64ltsmip_sym32"
 			targ_extra_libpath=$targ_extra_emuls ;;
 mips64*el-*-freebsd-* | mips64*el-*-kfreebsd*-gnu)
 			targ_emul=elf32ltsmipn32_fbsd
@@ -493,7 +503,10 @@ powerpc*-*-elf* | powerpc*-*-eabi* | powerpc*-*-sysv* \
 				tdir_elf32ppcsim=$tdir_elf32ppc
 				;;
 			*)	targ_emul=elf32ppc
-				targ_extra_emuls="elf32ppclinux elf32ppcsim" ;;
+				targ_extra_emuls="elf32ppclinux elf32ppcsim"
+				targ64_extra_emuls=elf64ppc
+				targ64_extra_libpath=elf64ppc
+				;;
 			esac ;;
 powerpc-*-vxworks*)
 			targ_emul=elf32ppcvxworks

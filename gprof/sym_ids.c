@@ -228,7 +228,7 @@ match (Sym *pattern, Sym *sym)
   if (pattern->name)
     {
       const char *sym_name = sym->name;
-      if (*sym_name && bfd_get_symbol_leading_char (core_bfd) == *sym_name)
+      if (*sym_name && bfd_get_symbol_leading_char (core_bfd[0]) == *sym_name)
 	sym_name++;
       if (strcmp (pattern->name, sym_name) != 0)
 	return FALSE;

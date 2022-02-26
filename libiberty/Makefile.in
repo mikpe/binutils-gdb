@@ -125,7 +125,7 @@ COMPILE.c = $(CC) -c @DEFS@ $(CFLAGS) $(CPPFLAGS) -I. -I$(INCDIR) $(HDEFINES) @a
 CFILES = alloca.c argv.c asprintf.c atexit.c				\
 	basename.c bcmp.c bcopy.c bsearch.c bzero.c			\
 	calloc.c choose-temp.c clock.c concat.c cp-demangle.c		\
-	 cp-demint.c cplus-dem.c crc32.c				\
+	 cp-demint.c cplus-dem.c crc32.c cygpath.c			\
 	dyn-string.c							\
 	fdmatch.c ffs.c fibheap.c filename_cmp.c floatformat.c		\
 	fnmatch.c fopen_unlocked.c					\
@@ -135,6 +135,7 @@ CFILES = alloca.c argv.c asprintf.c atexit.c				\
 	index.c insque.c						\
 	lbasename.c							\
 	lrealpath.c							\
+        win_realpath.c							\
 	make-relative-prefix.c						\
 	make-temp-file.c md5.c memchr.c memcmp.c memcpy.c memmem.c	\
 	 memmove.c mempcpy.c memset.c mkstemps.c			\
@@ -197,6 +198,8 @@ CONFIGURED_OFILES = ./asprintf.$(objext) ./atexit.$(objext)		\
 	./basename.$(objext) ./bcmp.$(objext) ./bcopy.$(objext)		\
 	./bsearch.$(objext) ./bzero.$(objext)				\
 	./calloc.$(objext) ./clock.$(objext) ./copysign.$(objext)	\
+	./cygpath.$(objext)						\
+	./win_realpath.$(objext)					\
 	./_doprnt.$(objext)						\
 	 ./ffs.$(objext)						\
 	./getcwd.$(objext) ./getpagesize.$(objext)			\
@@ -620,6 +623,13 @@ $(CONFIGURED_OFILES): stamp-picdir
 	else true; fi
 	$(COMPILE.c) $(srcdir)/crc32.c $(OUTPUT_OPTION)
 
+./cygpath.$(objext): $(srcdir)/cygpath.c $(INCDIR)/ansidecl.h \
+	$(INCDIR)/libiberty.h $(srcdir)/win_realpath.h
+	if [ x"$(PICFLAG)" != x ]; then \
+	  $(COMPILE.c) $(PICFLAG) $(srcdir)/cygpath.c -o pic/$@; \
+	else true; fi
+	$(COMPILE.c) $(srcdir)/cygpath.c $(OUTPUT_OPTION)
+
 ./dyn-string.$(objext): $(srcdir)/dyn-string.c config.h $(INCDIR)/ansidecl.h \
 	$(INCDIR)/dyn-string.h $(INCDIR)/libiberty.h
 	if [ x"$(PICFLAG)" != x ]; then \
@@ -761,6 +771,13 @@ $(CONFIGURED_OFILES): stamp-picdir
 	  $(COMPILE.c) $(PICFLAG) $(srcdir)/lrealpath.c -o pic/$@; \
 	else true; fi
 	$(COMPILE.c) $(srcdir)/lrealpath.c $(OUTPUT_OPTION)
+
+./win_realpath.$(objext): $(srcdir)/win_realpath.c config.h \
+         $(INCDIR)/ansidecl.h $(INCDIR)/libiberty.h
+	if [ x"$(PICFLAG)" != x ]; then \
+	  $(COMPILE.c) $(PICFLAG) $(srcdir)/win_realpath.c -o pic/$@; \
+	else true; fi
+	$(COMPILE.c) $(srcdir)/win_realpath.c $(OUTPUT_OPTION)
 
 ./make-relative-prefix.$(objext): $(srcdir)/make-relative-prefix.c config.h \
 	$(INCDIR)/ansidecl.h $(INCDIR)/libiberty.h

@@ -2395,6 +2395,26 @@ setup_bfd_headers (bfd *ibfd, bfd *obfd)
   return;
 }
 
+/* Sign extend VMA if ABFD tells us that addresses are sign
+   extended.  */
+
+static bfd_vma
+maybe_sign_extend_vma (bfd *abfd, bfd_vma vma)
+{
+  if (bfd_get_sign_extend_vma (abfd) == 1
+      && bfd_arch_bits_per_address (abfd) < 8 * sizeof (bfd_vma))
+    {
+      unsigned int bits = bfd_arch_bits_per_address (abfd);
+      bfd_vma sign_bit = ((bfd_vma) 1) << (bits - 1);
+      bfd_vma upper_bits = (~(bfd_vma) 0) << bits;
+      if ((vma & sign_bit) != 0)
+	vma |= upper_bits;
+      else
+	vma &= ~upper_bits;
+    }
+  return vma;
+}
+
 /* Create a section in OBFD with the same
    name and attributes as ISECTION in IBFD.  */
 
@@ -2491,6 +2511,7 @@ setup_section (bfd *ibfd, sec_ptr isection, void *obfdarg)
   else
     vma += change_section_address;
 
+  vma = maybe_sign_extend_vma (ibfd, vma);
   if (! bfd_set_section_vma (obfd, osection, vma))
     {
       err = _("failed to set vma");
@@ -2510,6 +2531,7 @@ setup_section (bfd *ibfd, sec_ptr isection, void *obfdarg)
   else
     lma += change_section_address;
 
+  lma = maybe_sign_extend_vma (ibfd, lma);
   osection->lma = lma;
 
   /* FIXME: This is probably not enough.  If we change the LMA we

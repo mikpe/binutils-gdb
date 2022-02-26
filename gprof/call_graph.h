@@ -22,7 +22,7 @@
 #ifndef call_graph_h
 #define call_graph_h
 
-extern void cg_tally      (bfd_vma, bfd_vma, unsigned long);
+extern void cg_tally      (bfd_vma, bfd_vma, unsigned long long);
 extern void cg_read_rec   (FILE *, const char *);
 extern void cg_write_arcs (FILE *, const char *);
 

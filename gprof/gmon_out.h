@@ -27,6 +27,7 @@
 
 #define	GMON_MAGIC	"gmon"	/* magic cookie */
 #define GMON_VERSION	1	/* version number */
+#define GMON_VERSION_2	2	/* version number */
 
 /* Raw header as it appears on file (without padding).  */
 struct gmon_hdr

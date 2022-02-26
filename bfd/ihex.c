@@ -771,6 +771,14 @@ ihex_write_object_contents (bfd *abfd)
       bfd_size_type count;
 
       where = l->where;
+
+      /* If the top 32 bits of a 64-bit address are simply a sign-extension
+	 of the bottom 32 bits, then simply truncate the address to 32 bits. */
+      if (sizeof (bfd_vma) * 8 > 32
+	  && ((where & ~(bfd_vma)0x7fffffff) == 0
+	      || (where & ~(bfd_vma)0x7fffffff) == ~(bfd_vma)0x7fffffff))
+	where &= (bfd_vma)0xffffffffUL;
+
       p = l->data;
       count = l->size;
 

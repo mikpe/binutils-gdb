@@ -14,3 +14,13 @@ GENERATE_PIE_SCRIPT=yes
 NO_SMALL_DATA=yes
 SEPARATE_GOTPLT=12
 IREL_IN_PLT=
+
+# Linux modify the default library search path to first include
+# a 32-bit specific directory.
+case "$target" in
+  x86_64*-linux* | i[3-7]86*-linux* | x86_64*-kfreebsd*-gnu | i[3-7]86*-kfreebsd*-gnu)
+    case "$EMULATION_NAME" in
+      *i386*) LIBPATH_SUFFIX=32 ;;
+    esac
+    ;;
+esac

@@ -185,6 +185,7 @@ case "${host}" in
   *-*-freebsd2.2.[[012]])	frag=mh-fbsd21 ;;
   i370-*-opened*)       frag=mh-openedition ;;
   i[[34567]]86-*-windows*)	frag=mh-windows ;;
+  i[[34567]]86-*-mingw*)	frag=mh-mingw ;;
 esac
 
 if [[ -n "${frag}" ]]; then
@@ -665,6 +666,13 @@ case "${host}" in
      *)				pexecute=pex-unix   ;;
 esac
 AC_SUBST(pexecute)
+
+# On MinGW, add support for Cygwin paths.
+case "${host}" in
+     *-*-mingw*)
+	AC_LIBOBJ([cygpath])
+	;;
+esac
 
 libiberty_AC_FUNC_STRNCMP
 

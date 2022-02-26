@@ -259,6 +259,8 @@ main (int argc, char **argv)
   command_line.warn_search_mismatch = TRUE;
   command_line.check_section_addresses = -1;
   command_line.disable_target_specific_optimizations = -1;
+  command_line.poison_system_directories = TRUE;
+  command_line.error_poison_system_directories = FALSE;
 
   /* We initialize DEMANGLING based on the environment variable
      COLLECT_NO_DEMANGLE.  The gcc collect2 program will demangle the
@@ -667,6 +669,24 @@ get_emulation (int argc, char **argv)
 	      /* FIXME: The argument -m486 is passed to the linker on
 		 some Linux systems.  Hope that nobody creates an
 		 emulation named 486.  */
+	    }
+	  else if (strcmp (argv[i], "-mv2") == 0
+		   || strcmp (argv[i], "-mv3") == 0
+		   || strcmp (argv[i], "-mv4") == 0
+		   || strcmp (argv[i], "-mv5") == 0
+		   || strcmp (argv[i], "-mv55") == 0)
+	    {
+		/* FIXME: See mips comment - added -mv5 */
+	    }
+	  else if (strcmp (argv [i], "-march") == 0
+		   || strcmp (argv [i], "-mcpu") == 0)
+	    {
+              i++;
+	    }
+          else if (strncmp (argv[i], "-march=", 7) == 0
+		   || strncmp (argv[i], "-mcpu=", 6) == 0)
+	    {
+		/* FIXME: Hope nobody create a march= or mcpu= emulation */
 	    }
 	  else
 	    {

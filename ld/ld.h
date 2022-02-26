@@ -200,6 +200,14 @@ typedef struct {
      input files.  */
   bfd_boolean accept_unknown_input_arch;
 
+  /* If TRUE (the default) warn for uses of system directories when
+     cross linking.  */
+  bfd_boolean poison_system_directories;
+
+  /* If TRUE (default FALSE) give an error for uses of system
+     directories when cross linking instead of a warning.  */
+  bfd_boolean error_poison_system_directories;
+
   /* If TRUE we'll just print the default output on stdout.  */
   bfd_boolean print_output_format;
 

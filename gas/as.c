@@ -764,23 +764,48 @@ This program has absolutely no warranty.\n"));
 	  break;
 
 	case OPTION_LISTING_LHS_WIDTH:
-	  listing_lhs_width = atoi (optarg);
-	  if (listing_lhs_width_second < listing_lhs_width)
-	    listing_lhs_width_second = listing_lhs_width;
+	  {
+	    int tmp = atoi (optarg);
+
+            if (tmp >= 0 && tmp <= LISTING_MAX)
+              {
+		listing_lhs_width = tmp;
+                if (listing_lhs_width_second < listing_lhs_width)
+                  listing_lhs_width_second = listing_lhs_width;
+              }
+            else
+              as_warn (_("disassembly width value ignored"));
+	  }
 	  break;
 	case OPTION_LISTING_LHS_WIDTH2:
 	  {
 	    int tmp = atoi (optarg);
 
-	    if (tmp > listing_lhs_width)
+	    if (tmp >= 0 && tmp <= LISTING_MAX && tmp > listing_lhs_width)
 	      listing_lhs_width_second = tmp;
+            else
+              as_warn (_("continued disassembly width value ignored"));
 	  }
 	  break;
 	case OPTION_LISTING_RHS_WIDTH:
-	  listing_rhs_width = atoi (optarg);
+	  {
+	    int tmp = atoi (optarg);
+
+	    if (tmp >= 0 && tmp <= LISTING_MAX)
+              listing_rhs_width = tmp;
+            else
+              as_warn (_("source width value ignored"));
+	  }
 	  break;
 	case OPTION_LISTING_CONT_LINES:
-	  listing_lhs_cont_lines = atoi (optarg);
+	  {
+	    int tmp = atoi (optarg);
+
+	    if (tmp >= 0 && tmp <= LISTING_MAX)
+              listing_lhs_cont_lines = tmp;
+            else
+              as_warn (_("continued disassembly lines value ignored"));
+	  }
 	  break;
 
 	case 'M':

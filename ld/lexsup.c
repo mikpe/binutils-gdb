@@ -175,6 +175,8 @@ enum option_values
   OPTION_PLUGIN_OPT,
 #endif /* ENABLE_PLUGINS */
   OPTION_DEFAULT_SCRIPT,
+  OPTION_NO_POISON_SYSTEM_DIRECTORIES,
+  OPTION_ERROR_POISON_SYSTEM_DIRECTORIES,
   OPTION_PRINT_OUTPUT_FORMAT,
 };
 
@@ -612,6 +614,14 @@ static const struct ld_option ld_options[] =
     TWO_DASHES },
   { {"wrap", required_argument, NULL, OPTION_WRAP},
     '\0', N_("SYMBOL"), N_("Use wrapper functions for SYMBOL"), TWO_DASHES },
+  { {"no-poison-system-directories", no_argument, NULL,
+     OPTION_NO_POISON_SYSTEM_DIRECTORIES},
+    '\0', NULL, N_("Do not warn for -L options using system directories"),
+    TWO_DASHES },
+  { {"error-poison-system-directories", no_argument, NULL,
+     OPTION_ERROR_POISON_SYSTEM_DIRECTORIES},
+    '\0', NULL, N_("Give an error for -L options using system directories"),
+    TWO_DASHES },
 };
 
 #define OPTION_COUNT ARRAY_SIZE (ld_options)
@@ -1541,6 +1551,14 @@ parse_args (unsigned argc, char **argv)
               einfo (_("%P%X: --hash-size needs a numeric argument\n"));
           }
           break;
+
+	case OPTION_NO_POISON_SYSTEM_DIRECTORIES:
+	  command_line.poison_system_directories = FALSE;
+	  break;
+
+	case OPTION_ERROR_POISON_SYSTEM_DIRECTORIES:
+	  command_line.error_poison_system_directories = TRUE;
+	  break;
 	}
     }
 

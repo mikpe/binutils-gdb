@@ -2413,6 +2413,8 @@ print_arm_address (bfd_vma pc, struct disassemble_info *info, long given)
 	      arm_decode_shift (given, func, stream, TRUE);
 	    }
 	}
+      if (NEGATIVE_BIT_SET)
+	offset = -offset;
     }
 
   return (signed long) offset;
@@ -3140,13 +3142,23 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 		    case 'o':
 		      if ((given & 0x02000000) != 0)
 			{
-			  int rotate = (given & 0xf00) >> 7;
-			  int immed = (given & 0xff);
+			  unsigned int rotate = (given & 0xf00) >> 7;
+			  unsigned int immed = (given & 0xff);
+			  unsigned int a, i;
 
-			  immed = (((immed << (32 - rotate))
-				    | (immed >> rotate)) & 0xffffffff);
-			  func (stream, "#%d", immed);
-			  value_in_comment = immed;
+			  a = (((immed << (32 - rotate))
+				| (immed >> rotate)) & 0xffffffff);
+			  /* If there is another encoding with smaller rotate,
+			     the rotate should be specified directly.  */
+			  for (i = 0; i < 32; i += 2)
+			    if ((a << i | a >> (32 - i)) <= 0xff)
+			      break;
+
+			  if (i != rotate)
+			    func (stream, "#%d, %d", immed, rotate);
+			  else
+			    func (stream, "#%d", a);
+			  value_in_comment = a;
 			}
 		      else
 			arm_decode_shift (given, func, stream, TRUE);
@@ -4683,7 +4695,7 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
       bfd_vma addr;
       int n, start;
       int last_sym = -1;
-      enum map_type type = MAP_ARM;
+      enum map_type type = MAP_DATA;
 
       /* Start scanning at the start of the function, or wherever
 	 we finished last time.  */

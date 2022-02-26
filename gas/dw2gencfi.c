@@ -84,6 +84,12 @@
 #define DWARF2_ADDR_SIZE(bfd) (bfd_arch_bits_per_address (bfd) / 8)
 #endif
 
+/* By default emit .eh_frame only, not .debug_frame.  */
+#define CFI_EMIT_eh_frame	(1 << 0)
+#define CFI_EMIT_debug_frame	(1 << 1)
+#define CFI_EMIT_target		(1 << 2)
+static int cfi_sections = CFI_EMIT_eh_frame;
+
 #if SUPPORT_FRAME_LINKONCE
 #define CUR_SEG(structp) structp->cur_seg
 #define SET_CUR_SEG(structp, seg) structp->cur_seg = seg 
@@ -854,6 +860,14 @@ dot_cfi_personality (int ignored ATTRIBUTE_UNUSED)
       return;
     }
 
+  if ((cfi_sections & CFI_EMIT_eh_frame) == 0)
+    {
+      /* Do not create an undefined symbol for the personality
+	 routine, since it will not be used.  */
+      ignore_rest_of_line ();
+      return;
+    }
+
   expression_and_evaluate (&fde->personality);
   switch (fde->personality.X_op)
     {
@@ -1016,12 +1030,6 @@ dot_cfi_val_encoded_addr (int ignored ATTRIBUTE_UNUSED)
 
   demand_empty_rest_of_line ();
 }
-
-/* By default emit .eh_frame only, not .debug_frame.  */
-#define CFI_EMIT_eh_frame	(1 << 0)
-#define CFI_EMIT_debug_frame	(1 << 1)
-#define CFI_EMIT_target		(1 << 2)
-static int cfi_sections = CFI_EMIT_eh_frame;
 
 static void
 dot_cfi_sections (int ignored ATTRIBUTE_UNUSED)

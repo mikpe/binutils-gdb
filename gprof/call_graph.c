@@ -31,7 +31,7 @@
 #include "sym_ids.h"
 
 void
-cg_tally (bfd_vma from_pc, bfd_vma self_pc, unsigned long count)
+cg_tally (bfd_vma from_pc, bfd_vma self_pc, unsigned long long count)
 {
   Sym *parent;
   Sym *child;
@@ -64,9 +64,15 @@ cg_tally (bfd_vma from_pc, bfd_vma self_pc, unsigned long count)
 	  && !sym_id_arc_is_present (&syms[EXCL_ARCS], parent, child)))
     {
       child->ncalls += count;
+#if defined (__MINGW32__)
       DBG (TALLYDEBUG,
-	   printf (_("[cg_tally] arc from %s to %s traversed %lu times\n"),
+	   printf (_("[cg_tally] arc from %s to %s traversed %I64u times\n"),
 		   parent->name, child->name, count));
+#else
+      DBG (TALLYDEBUG,
+	   printf (_("[cg_tally] arc from %s to %s traversed %llu times\n"),
+		   parent->name, child->name, count));
+#endif
       arc_add (parent, child, count);
     }
 }
@@ -80,23 +86,45 @@ void
 cg_read_rec (FILE *ifp, const char *filename)
 {
   bfd_vma from_pc, self_pc;
-  unsigned int count;
+  unsigned int count32;
+  unsigned long long count64;
 
-  if (gmon_io_read_vma (ifp, &from_pc)
-      || gmon_io_read_vma (ifp, &self_pc)
-      || gmon_io_read_32 (ifp, &count))
+  if (gmon_file_version == 1)
     {
-      fprintf (stderr, _("%s: %s: unexpected end of file\n"),
-	       whoami, filename);
-      done (1);
+      if (gmon_io_read_vma (ifp, &from_pc)
+          || gmon_io_read_vma (ifp, &self_pc)
+          || gmon_io_read_32 (ifp, &count32))
+        {
+          fprintf (stderr, _("%s: %s: unexpected end of file\n"),
+	           whoami, filename);
+          done (1);
+        }
+      count64 = (unsigned long long) count32;
+    }
+  else
+    {
+      if (gmon_io_read_vma (ifp, &from_pc)
+          || gmon_io_read_vma (ifp, &self_pc))
+        {
+          fprintf (stderr, _("%s: %s: unexpected end of file\n"),
+	           whoami, filename);
+          done (1);
+        }
+
+      if((count64 = readCompressed(ifp)) == (unsigned long long) ~0)
+        {
+          fprintf (stderr, _("%s: %s: unexpected end of file\n"),
+	           whoami, filename);
+          done (1);
+        }
     }
 
   DBG (SAMPLEDEBUG,
        printf ("[cg_read_rec] frompc 0x%lx selfpc 0x%lx count %lu\n",
 	       (unsigned long) from_pc, (unsigned long) self_pc,
-	       (unsigned long) count));
+	       (unsigned long) count64));
   /* Add this arc:  */
-  cg_tally (from_pc, self_pc, count);
+  cg_tally (from_pc, self_pc, count64);
 }
 
 /* Write all the arcs in the call-graph to file OFP.  FILENAME is

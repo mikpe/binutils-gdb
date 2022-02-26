@@ -4834,6 +4834,7 @@ case "${host}" in
   *-*-freebsd2.2.[012])	frag=mh-fbsd21 ;;
   i370-*-opened*)       frag=mh-openedition ;;
   i[34567]86-*-windows*)	frag=mh-windows ;;
+  i[34567]86-*-mingw*)	frag=mh-mingw ;;
 esac
 
 if [ -n "${frag}" ]; then
@@ -6621,6 +6622,18 @@ case "${host}" in
      *)				pexecute=pex-unix   ;;
 esac
 
+
+# On MinGW, add support for Cygwin paths.
+case "${host}" in
+     *-*-mingw*)
+	case " $LIBOBJS " in
+  *" cygpath.$ac_objext "* ) ;;
+  *) LIBOBJS="$LIBOBJS cygpath.$ac_objext"
+ ;;
+esac
+
+	;;
+esac
 
 if test x$gcc_no_link = xyes; then
   if test "x${ac_cv_func_mmap_fixed_mapped+set}" != xset; then

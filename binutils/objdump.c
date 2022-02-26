@@ -1531,6 +1531,9 @@ disassemble_bytes (struct disassemble_info * inf,
 
   inf->insn_info_valid = 0;
 
+  /* Reset any disasm state as required.  */
+  (*disassemble_fn) (0, NULL);
+
   addr_offset = start_offset;
   while (addr_offset < stop_offset)
     {

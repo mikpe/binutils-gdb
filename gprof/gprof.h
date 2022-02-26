@@ -113,7 +113,15 @@ typedef unsigned char UNIT[2];	/* unit of profiling */
 extern const char *whoami;	/* command-name, for error messages */
 extern const char *function_mapping_file; /* file mapping functions to files */
 extern const char *a_out_name;	/* core filename */
+extern char hist_dimension[];   /* histogram label */
+
+#define HERTZ_FLOAT
+#ifdef HERTZ_FLOAT
+extern double hz;		/* ticks per second */
+#else
 extern long hz;			/* ticks per second */
+#endif
+extern long hz_int;
 
 /*
  * Command-line options:
@@ -136,5 +144,6 @@ extern File_Format file_format;		/* requested file format */
 extern bfd_boolean first_output;	/* no output so far? */
 
 extern void done (int status) ATTRIBUTE_NORETURN;
+extern unsigned long long readCompressed (FILE *);
 
 #endif /* gprof_h */

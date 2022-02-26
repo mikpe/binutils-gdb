@@ -105,6 +105,7 @@ case ${generic_target} in
   arm-*-rtems*)				fmt=elf ;;
   arm-*-elf)				fmt=elf ;;
   arm-*-eabi*)				fmt=elf em=armeabi ;;
+  arm-*-nucleuseabi*)			fmt=elf em=armeabi ;;
   arm-*-symbianelf*)			fmt=elf em=symbian ;;
   arm-*-kaos*)				fmt=elf ;;
   arm-*-conix*)				fmt=elf ;;
@@ -145,6 +146,7 @@ case ${generic_target} in
   frv-*-*linux*)			fmt=elf em=linux;;
   frv-*-*)				fmt=elf ;;
 
+  hexagon-*-*)				fmt=elf ;;
   hppa-*-linux*)
     case ${cpu} in
       hppa*64*)				fmt=elf em=hppalinux64 ;;
@@ -288,6 +290,8 @@ case ${generic_target} in
   mips*-*-freebsd* | mips*-*-kfreebsd*-gnu)
 					fmt=elf em=freebsd ;;
   mips-*-sysv4*MP* | mips-*-gnu*)	fmt=elf em=tmips ;;
+  mips-wrs-elf*)			fmt=elf em=tmips ;;
+  mips-montavista-elf*)                 fmt=elf em=tmips ;;
   mips*-sde-elf*)			fmt=elf em=tmips ;;
   mips-*-sysv*)				fmt=ecoff ;;
   mips-*-elf* | mips-*-rtems*)		fmt=elf ;;

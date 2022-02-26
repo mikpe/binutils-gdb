@@ -1994,6 +1994,16 @@ fragment <<EOF
     return
 EOF
 sed $sc ldscripts/${EMULATION_NAME}.xu			>> e${EMULATION_NAME}.c
+if [ "${ARCH}" = "hexagon" ]; then
+  case ${target} in
+    *-linux*)
+      ;;
+    *)
+      echo '  ; else if (use_tcm) return'		>> e${EMULATION_NAME}.c
+      sed $sc ldscripts/${EMULATION_NAME}.tcm		>> e${EMULATION_NAME}.c
+      ;;
+  esac
+fi
 echo '  ; else if (link_info.relocatable) return'	>> e${EMULATION_NAME}.c
 sed $sc ldscripts/${EMULATION_NAME}.xr			>> e${EMULATION_NAME}.c
 echo '  ; else if (!config.text_read_only) return'	>> e${EMULATION_NAME}.c
@@ -2044,6 +2054,11 @@ fragment <<EOF
 {
   *isfile = 1;
 
+#ifdef EMUL_HEXAGON
+  if (use_tcm)
+    return "ldscripts/${EMULATION_NAME}.tcm";
+  else
+#endif
   if (link_info.relocatable && config.build_constructors)
     return "ldscripts/${EMULATION_NAME}.xu";
   else if (link_info.relocatable)

@@ -38,6 +38,9 @@
 #include "elf/mips.h"
 #endif
 
+/* Generate Octeon unaligned load and store instructions. */
+int octeon_use_unalign = 1;
+
 /* Mips instructions are at maximum this many bytes long.  */
 #define INSNLEN 4
 
@@ -404,6 +407,36 @@ static const struct mips_cp0sel_name mips_cp0sel_names_sb1[] =
   { 29, 3, "c0_datahi_d"	},
 };
 
+static const char * const mips_cp0_names_octeon[32] = {
+  "c0_index",     "c0_random",    "c0_entrylo0",  "c0_entrylo1",
+  "c0_context",   "c0_pagemask",  "c0_wired",     "c0_hwrena",
+  "c0_badvaddr",  "c0_count",     "c0_entryhi",   "c0_compare",
+  "c0_status",    "c0_cause",     "c0_epc",       "c0_prid",
+  "c0_config",    "$17",          "c0_watchlo",   "c0_watchhi",
+  "c0_xcontext",  "$21",          "c0_mdebug",    "c0_debug",
+  "c0_depc",      "c0_perfcnt",   "$26",          "c0_cacheerr",
+  "c0_taglo",     "c0_taghi",     "c0_errorepc",  "c0_desave",
+};
+
+static const struct mips_cp0sel_name mips_cp0sel_names_octeon[] = {
+  { 5,  1, "c0_pagegrain"		},
+  { 9,  6, "c0_cvmcount"		},
+  { 9,  7, "c0_cvmctl"			},
+  { 11, 7, "c0_cvmmemctl"		},
+  { 12, 1, "c0_intctl"			},
+  { 12, 2, "c0_srsctl"			},
+  { 15, 1, "c0_ebase"			},
+  { 16, 1, "c0_config1",		},
+  { 16, 2, "c0_config2",		},
+  { 16, 3, "c0_config3",		},
+  { 18, 1, "c0_watchlo,1"		},
+  { 19, 1, "c0_watchhi,1"		},
+  { 25, 2, "c0_perfcnt,2"		},
+  { 27, 1, "c0_cacheerr,1"		},
+  { 28, 3, "c0_datalo"			},
+  { 29, 3, "c0_datahi"			},
+};
+
 /* Xlr cop0 register names.  */
 static const char * const mips_cp0_names_xlr[32] = {
   "c0_index",     "c0_random",    "c0_entrylo0",  "c0_entrylo1",
@@ -602,7 +635,8 @@ const struct mips_arch_choice mips_arch_choices[] =
     NULL, 0, mips_hwr_names_numeric },
 
   { "octeon",   1, bfd_mach_mips_octeon, CPU_OCTEON,
-    ISA_MIPS64R2 | INSN_OCTEON, mips_cp0_names_numeric, NULL, 0,
+    ISA_MIPS64R2 | INSN_OCTEON, mips_cp0_names_octeon,
+    mips_cp0sel_names_octeon, ARRAY_SIZE (mips_cp0sel_names_octeon),
     mips_hwr_names_numeric },
 
   { "xlr", 1, bfd_mach_mips_xlr, CPU_XLR,
@@ -782,7 +816,17 @@ parse_mips_dis_option (const char *option, unsigned int len)
       no_aliases = 1;
       return;
     }
-  
+  if (strcmp ("octeon-useun", option) == 0)
+    {
+      octeon_use_unalign = 1;
+      return;
+    }
+  if (strcmp ("no-octeon-useun", option) == 0)
+    {
+      octeon_use_unalign = 0;
+      return;
+    }
+
   /* Look for the = that delimits the end of the option name.  */
   for (i = 0; i < len; i++)
     if (option[i] == '=')
@@ -1550,6 +1594,27 @@ print_insn_mips (bfd_vma memaddr,
 	      if (! OPCODE_IS_MEMBER (op, mips_isa, mips_processor)
 		  && strcmp (op->name, "jalx"))
 		continue;
+
+	      if (info->mach == CPU_OCTEON && octeon_use_unalign)
+	        {
+	          if (strcmp (op->name, "lwl") == 0
+	              || strcmp (op->name, "ldl") == 0
+	              || strcmp (op->name, "swl") == 0
+	              || strcmp (op->name, "sdl") == 0
+		      || strcmp (op->name, "lcache") == 0
+		      || strcmp (op->name, "scache") == 0
+		      || strcmp (op->name, "flush") == 0)
+		    continue;
+
+	          if (strcmp (op->name, "ldr") == 0
+		       || strcmp (op->name, "lwr") == 0
+		       || strcmp (op->name, "swr") == 0
+		       || strcmp (op->name, "sdr") == 0)
+		    {
+	      	      (*info->fprintf_func) (info->stream, "nop");
+		      return INSNLEN;
+		    }
+	        }
 
 	      /* Figure out instruction type and branch delay information.  */
 	      if ((op->pinfo & INSN_UNCOND_BRANCH_DELAY) != 0)
@@ -2396,12 +2461,49 @@ print_insn_micromips (bfd_vma memaddr, struct disassemble_info *info)
 		  iprintf (is, "0x%lx", GET_OP (insn, STYPE));
 		  break;
 
+		case '2':
+		  iprintf (is, "0x%lx", GET_OP (insn, BP));
+		  break;
+
+		case '3':
+		  iprintf (is, "0x%lx", GET_OP (insn, SA3));
+		  break;
+
+		case '4':
+		  iprintf (is, "0x%lx", GET_OP (insn, SA4));
+		  break;
+
+		case '5':
+		  iprintf (is, "0x%lx", GET_OP (insn, IMM8));
+		  break;
+
+		case '6':
+		  iprintf (is, "0x%lx", GET_OP (insn, RS));
+		  break;
+
+		case '7':
+		  iprintf (is, "$ac%ld", GET_OP (insn, DSPACC));
+		  break;
+
+		case '8':
+		  iprintf (is, "0x%lx", GET_OP (insn, WRDSP));
+		  break;
+
+		case '0': /* DSP 6-bit signed immediate in bit 16.  */
+		  delta = (GET_OP (insn, DSPSFT) ^ 0x20) - 0x20;
+		  iprintf (is, "%d", delta);
+		  break;
+
 		case '<':
 		  iprintf (is, "0x%lx", GET_OP (insn, SHAMT));
 		  break;
 
 		case '\\':
 		  iprintf (is, "0x%lx", GET_OP (insn, 3BITPOS));
+		  break;
+
+		case '^':
+		  iprintf (is, "0x%lx", GET_OP (insn, RD));
 		  break;
 
 		case '|':
@@ -2518,6 +2620,11 @@ print_insn_micromips (bfd_vma memaddr, struct disassemble_info *info)
 
 		case 'z':
 		  iprintf (is, "%s", mips_gpr_names[0]);
+		  break;
+
+		case '@': /* DSP 10-bit signed immediate in bit 16.  */
+		  delta = (GET_OP (insn, IMM10) ^ 0x200) - 0x200;
+		  iprintf (is, "%d", delta);
 		  break;
 
 		case 'B':
@@ -2954,24 +3061,25 @@ print_insn_micromips (bfd_vma memaddr, struct disassemble_info *info)
 static bfd_boolean
 is_compressed_mode_p (struct disassemble_info *info)
 {
-  elf_symbol_type *symbol;
-  int pos;
   int i;
+  int l;
 
-  for (i = 0; i < info->num_symbols; i++)
-    {
-      pos = info->symtab_pos + i;
-
-      if (bfd_asymbol_flavour (info->symtab[pos]) != bfd_target_elf_flavour)
-	continue;
-
-      symbol = (elf_symbol_type *) info->symtab[pos];
-      if ((!micromips_ase
-	   && ELF_ST_IS_MIPS16 (symbol->internal_elf_sym.st_other))
-	  || (micromips_ase
-	      && ELF_ST_IS_MICROMIPS (symbol->internal_elf_sym.st_other)))
-	    return 1;
-    }
+  for (i = info->symtab_pos, l = i + info->num_symbols; i < l; i++)
+    if (((info->symtab[i])->flags & BSF_SYNTHETIC) != 0
+	&& ((!micromips_ase
+	     && ELF_ST_IS_MIPS16 ((*info->symbols)->udata.i))
+	    || (micromips_ase
+		&& ELF_ST_IS_MICROMIPS ((*info->symbols)->udata.i))))
+      return 1;
+    else if (bfd_asymbol_flavour (info->symtab[i]) == bfd_target_elf_flavour)
+      {
+	elf_symbol_type *symbol = (elf_symbol_type *) info->symtab[i];
+	if ((!micromips_ase
+	     && ELF_ST_IS_MIPS16 (symbol->internal_elf_sym.st_other))
+	    || (micromips_ase
+		&& ELF_ST_IS_MICROMIPS (symbol->internal_elf_sym.st_other)))
+	  return 1;
+      }
 
   return 0;
 }
@@ -3052,6 +3160,12 @@ print_mips_disassembler_options (FILE *stream)
   fprintf (stream, _("\n\
 The following MIPS specific disassembler options are supported for use\n\
 with the -M switch (multiple options should be separated by commas):\n"));
+
+  fprintf (stream, _("\n\
+  octeon-useun             Disassemble Octeon unaligned load/store instructions.\n"));
+
+  fprintf (stream, _("\n\
+  no-octeon-useun          Disassemble mips unaligned load/store instructions.\n"));
 
   fprintf (stream, _("\n\
   gpr-names=ABI            Print GPR names according to  specified ABI.\n\

@@ -38,6 +38,7 @@
 #define ARCH_frv
 #define ARCH_h8300
 #define ARCH_h8500
+#define ARCH_hexagon
 #define ARCH_hppa
 #define ARCH_i370
 #define ARCH_i386
@@ -185,6 +186,11 @@ disassembler (abfd)
 #ifdef ARCH_h8500
     case bfd_arch_h8500:
       disassemble = print_insn_h8500;
+      break;
+#endif
+#ifdef ARCH_hexagon
+    case bfd_arch_hexagon:
+      disassemble = hexagon_get_disassembler (abfd);
       break;
 #endif
 #ifdef ARCH_hppa

@@ -74,6 +74,8 @@ static int mips_output_flavor (void) { return OUTPUT_FLAVOR; }
 
 int mips_flag_mdebug = -1;
 
+static int octeon_use_unalign = 0;
+
 /* Control generation of .pdr sections.  Off by default on IRIX: the native
    linker doesn't know about and discards them, but relocations against them
    remain, leading to rld crashes.  */
@@ -252,6 +254,10 @@ struct mips_set_options
   /* Non-zero if we should not autoextend mips16 instructions.
      Changed by `.set autoextend' and `.set noautoextend'.  */
   int noautoextend;
+  /* True if we should only emit 32-bit microMIPS instructions.
+     Changed by `.set insn32' and `.set noinsn32', and the -minsn32
+     and -mno-insn32 command line options.  */
+  bfd_boolean insn32;
   /* Restrict general purpose registers and floating point registers
      to 32 bit.  This is initially determined when -mgp32 or -mfp32
      is passed but can changed if the assembler code uses .set mipsN.  */
@@ -295,8 +301,9 @@ static struct mips_set_options mips_opts =
   /* ase_smartmips */ 0, /* ase_dsp */ -1, /* ase_dspr2 */ -1, /* ase_mt */ -1,
   /* ase_mcu */ -1, /* mips16 */ -1, /* micromips */ -1, /* noreorder */ 0,
   /* at */ ATREG, /* warn_about_macros */ 0, /* nomove */ 0, /* nobopt */ 0,
-  /* noautoextend */ 0, /* gp32 */ 0, /* fp32 */ 0, /* arch */ CPU_UNKNOWN,
-  /* sym32 */ FALSE, /* soft_float */ FALSE, /* single_float */ FALSE
+  /* noautoextend */ 0, /* insn32 */ FALSE, /* gp32 */ 0, /* fp32 */ 0,
+  /* arch */ CPU_UNKNOWN, /* sym32 */ FALSE, /* soft_float */ FALSE,
+  /* single_float */ FALSE
 };
 
 /* These variables are filled in with the masks of registers used.
@@ -351,7 +358,8 @@ static int file_ase_smartmips;
 static int file_ase_dsp;
 
 #define ISA_SUPPORTS_DSP_ASE (mips_opts.isa == ISA_MIPS32R2		\
-			      || mips_opts.isa == ISA_MIPS64R2)
+			      || mips_opts.isa == ISA_MIPS64R2		\
+			      || mips_opts.micromips)
 
 #define ISA_SUPPORTS_DSP64_ASE (mips_opts.isa == ISA_MIPS64R2)
 
@@ -360,7 +368,8 @@ static int file_ase_dsp;
 static int file_ase_dspr2;
 
 #define ISA_SUPPORTS_DSPR2_ASE (mips_opts.isa == ISA_MIPS32R2		\
-			        || mips_opts.isa == ISA_MIPS64R2)
+			        || mips_opts.isa == ISA_MIPS64R2	\
+				|| mips_opts.micromips)
 
 /* True if -mmt was passed or implied by arguments passed on the
    command line (e.g., by -march).  */
@@ -439,6 +448,13 @@ static int mips_32bitmode = 0;
 #define ISA_HAS_MXHC1(ISA)		\
   ((ISA) == ISA_MIPS32R2		\
    || (ISA) == ISA_MIPS64R2)
+
+/* Return true if ISA supports ins instructions.  */
+#define ISA_HAS_INS(ISA)		\
+  ((ISA) == ISA_MIPS32R2		\
+   || (ISA) == ISA_MIPS64R2		\
+   || mips_opts.micromips		\
+   )
 
 #define HAVE_32BIT_GPRS		                   \
     (mips_opts.gp32 || !ISA_HAS_64BIT_REGS (mips_opts.isa))
@@ -743,8 +759,13 @@ static struct mips_cl_insn micromips_nop16_insn;
 static struct mips_cl_insn micromips_nop32_insn;
 
 /* The appropriate nop for the current mode.  */
-#define NOP_INSN (mips_opts.mips16 ? &mips16_nop_insn \
-		  : (mips_opts.micromips ? &micromips_nop16_insn : &nop_insn))
+#define NOP_INSN (mips_opts.mips16					\
+		  ? &mips16_nop_insn					\
+		  : (mips_opts.micromips				\
+		     ? (mips_opts.insn32				\
+			? &micromips_nop32_insn				\
+			: &micromips_nop16_insn)			\
+		     : &nop_insn))
 
 /* The size of NOP_INSN in bytes.  */
 #define NOP_INSN_SIZE (HAVE_CODE_COMPRESSION ? 2 : 4)
@@ -1326,7 +1347,7 @@ static void mips16_macro_build
 static void load_register (int, expressionS *, int);
 static void macro_start (void);
 static void macro_end (void);
-static void macro (struct mips_cl_insn * ip);
+static void macro (struct mips_cl_insn *ip, char *str);
 static void mips16_macro (struct mips_cl_insn * ip);
 static void mips_ip (char *str, struct mips_cl_insn * ip);
 static void mips16_ip (char *str, struct mips_cl_insn * ip);
@@ -1352,6 +1373,8 @@ static void s_cprestore (int);
 static void s_cpreturn (int);
 static void s_dtprelword (int);
 static void s_dtpreldword (int);
+static void s_tprelword (int);
+static void s_tpreldword (int);
 static void s_gpvalue (int);
 static void s_gpword (int);
 static void s_gpdword (int);
@@ -1431,6 +1454,8 @@ static const pseudo_typeS mips_pseudo_table[] =
   {"cpreturn", s_cpreturn, 0},
   {"dtprelword", s_dtprelword, 0},
   {"dtpreldword", s_dtpreldword, 0},
+  {"tprelword", s_tprelword, 0},
+  {"tpreldword", s_tpreldword, 0},
   {"gpvalue", s_gpvalue, 0},
   {"gpword", s_gpword, 0},
   {"gpdword", s_gpdword, 0},
@@ -2261,6 +2286,13 @@ is_size_valid (const struct mips_opcode *mo)
   if (!mips_opts.micromips)
     return TRUE;
 
+  if (mips_opts.insn32)
+    {
+      if (mo->pinfo != INSN_MACRO && micromips_insn_length (mo) != 4)
+	return FALSE;
+      if ((mo->pinfo2 & INSN2_BRANCH_DELAY_16BIT) != 0)
+	return FALSE;
+    }
   if (!forced_insn_length)
     return TRUE;
   if (mo->pinfo == INSN_MACRO)
@@ -2303,6 +2335,12 @@ md_begin (void)
     {
       if (g_switch_seen && g_switch_value != 0)
 	as_bad (_("-G may not be used in position-independent code"));
+      g_switch_value = 0;
+    }
+  else if (mips_abicalls)
+    {
+      if (g_switch_seen && g_switch_value != 0)
+	as_bad (_("-G may not be used with abicalls"));
       g_switch_value = 0;
     }
 
@@ -2586,7 +2624,7 @@ md_assemble (char *str)
       if (mips_opts.mips16)
 	mips16_macro (&insn);
       else
-	macro (&insn);
+	macro (&insn, str);
       macro_end ();
     }
   else
@@ -3729,9 +3767,8 @@ can_swap_branch_p (struct mips_cl_insn *ip)
 
   /* If the previous instruction is in a variant frag other than this
      branch's one, we cannot do the swap.  This does not apply to
-     MIPS16/microMIPS code, which uses variant frags for different
-     purposes.  */
-  if (!HAVE_CODE_COMPRESSION
+     MIPS16 code, which uses variant frags for different purposes.  */
+  if (!mips_opts.mips16
       && history[0].frag
       && history[0].frag->fr_type == rs_machine_dependent)
     return FALSE;
@@ -4730,21 +4767,21 @@ macro_end (void)
 /* Instruction operand formats used in macros that vary between
    standard MIPS and microMIPS code.  */
 
-static const char * const brk_fmt[2] = { "c", "mF" };
+static const char * const brk_fmt[2][2] = { { "c", "c" }, { "mF", "c" } };
 static const char * const cop12_fmt[2] = { "E,o(b)", "E,~(b)" };
 static const char * const jalr_fmt[2] = { "d,s", "t,s" };
 static const char * const lui_fmt[2] = { "t,u", "s,u" };
 static const char * const mem12_fmt[2] = { "t,o(b)", "t,~(b)" };
-static const char * const mfhl_fmt[2] = { "d", "mj" };
+static const char * const mfhl_fmt[2][2] = { { "d", "d" }, { "mj", "s" } };
 static const char * const shft_fmt[2] = { "d,w,<", "t,r,<" };
 static const char * const trap_fmt[2] = { "s,t,q", "s,t,|" };
 
-#define BRK_FMT (brk_fmt[mips_opts.micromips])
+#define BRK_FMT (brk_fmt[mips_opts.micromips][mips_opts.insn32])
 #define COP12_FMT (cop12_fmt[mips_opts.micromips])
 #define JALR_FMT (jalr_fmt[mips_opts.micromips])
 #define LUI_FMT (lui_fmt[mips_opts.micromips])
 #define MEM12_FMT (mem12_fmt[mips_opts.micromips])
-#define MFHL_FMT (mfhl_fmt[mips_opts.micromips])
+#define MFHL_FMT (mfhl_fmt[mips_opts.micromips][mips_opts.insn32])
 #define SHFT_FMT (shft_fmt[mips_opts.micromips])
 #define TRAP_FMT (trap_fmt[mips_opts.micromips])
 
@@ -4882,8 +4919,7 @@ macro_build (expressionS *ep, const char *name, const char *fmt, ...)
 	  continue;
 
 	case '2':
-	  gas_assert (!mips_opts.micromips);
-	  INSERT_OPERAND (0, BP, insn, va_arg (args, int));
+	  INSERT_OPERAND (mips_opts.micromips, BP, insn, va_arg (args, int));
 	  continue;
 
 	case 'n':
@@ -4895,8 +4931,7 @@ macro_build (expressionS *ep, const char *name, const char *fmt, ...)
 	  continue;
 
 	case 'c':
-	  gas_assert (!mips_opts.micromips);
-	  INSERT_OPERAND (0, CODE, insn, va_arg (args, int));
+	  INSERT_OPERAND (mips_opts.micromips, CODE, insn, va_arg (args, int));
 	  continue;
 
 	case 'W':
@@ -5265,8 +5300,9 @@ macro_build_jalr (expressionS *ep, int cprestore)
     macro_build (NULL, "jalr", "d,s", RA, PIC_CALL_REG);
   else
     {
-      jalr = mips_opts.noreorder && !cprestore ? "jalr" : "jalrs";
-      if (MIPS_JALR_HINT_P (ep))
+      jalr = ((mips_opts.noreorder && !cprestore) || mips_opts.insn32
+	      ? "jalr" : "jalrs");
+      if (MIPS_JALR_HINT_P (ep) || mips_opts.insn32)
 	macro_build (NULL, jalr, "t,s", RA, PIC_CALL_REG);
       else
 	macro_build (NULL, jalr, "mj", PIC_CALL_REG);
@@ -5944,6 +5980,7 @@ move_register (int dest, int source)
   /* Prefer to use a 16-bit microMIPS instruction unless the previous
      instruction specifically requires a 32-bit one.  */
   if (mips_opts.micromips
+      && !mips_opts.insn32
       && !(history[0].insn_mo->pinfo2 & INSN2_BRANCH_DELAY_32BIT))
     macro_build (NULL, "move", "mp,mj", dest, source );
   else
@@ -6140,7 +6177,7 @@ macro_build_branch_rs (int type, expressionS *ep, unsigned int sreg)
       break;
     case M_BGEZALL:
       gas_assert (mips_opts.micromips);
-      br = "bgezals";
+      br = mips_opts.insn32 ? "bgezal" : "bgezals";
       brneg = "bltz";
       call = 1;
       break;
@@ -6167,7 +6204,7 @@ macro_build_branch_rs (int type, expressionS *ep, unsigned int sreg)
       break;
     case M_BLTZALL:
       gas_assert (mips_opts.micromips);
-      br = "bltzals";
+      br = mips_opts.insn32 ? "bltzal" : "bltzals";
       brneg = "bgez";
       call = 1;
       break;
@@ -6239,7 +6276,7 @@ macro_build_branch_rsrt (int type, expressionS *ep,
  * we're missing.
  */
 static void
-macro (struct mips_cl_insn *ip)
+macro (struct mips_cl_insn *ip, char *str)
 {
   unsigned int treg, sreg, dreg, breg;
   unsigned int tempreg;
@@ -6251,6 +6288,7 @@ macro (struct mips_cl_insn *ip)
   const char *s;
   const char *s2;
   const char *fmt;
+  int ulh_swp = 0;
   int likely = 0;
   int coproc = 0;
   int off12 = 0;
@@ -6397,9 +6435,14 @@ macro (struct mips_cl_insn *ip)
 	case 2:
 	  macro_build (NULL, "packrl.ph", "d,s,t", treg, treg, sreg);
 	  break;
-	default:
+	case 1:
+	case 3:
 	  macro_build (NULL, "balign", "t,s,2", treg, sreg,
 		       (int) imm_expr.X_add_number);
+	  break;
+	default:
+	  as_bad (_("BALIGN immediate not 0,1,2,3 (%lu)"),
+		  (unsigned long) imm_expr.X_add_number);
 	  break;
 	}
       break;
@@ -7689,6 +7732,11 @@ macro (struct mips_cl_insn *ip)
       /* Fall through.  */
     case M_JALS_2:
       gas_assert (mips_opts.micromips);
+      if (mips_opts.insn32)
+	{
+	  as_bad (_("Opcode not supported in the `insn32' mode `%s'"), str);
+	  break;
+	}
       jals = 1;
       goto jal;
     case M_JAL_1:
@@ -7699,7 +7747,7 @@ macro (struct mips_cl_insn *ip)
       if (mips_pic == NO_PIC)
 	{
 	  s = jals ? "jalrs" : "jalr";
-	  if (mips_opts.micromips && dreg == RA)
+	  if (mips_opts.micromips && !mips_opts.insn32 && dreg == RA)
 	    macro_build (NULL, s, "mj", sreg);
 	  else
 	    macro_build (NULL, s, JALR_FMT, dreg, sreg);
@@ -7712,9 +7760,11 @@ macro (struct mips_cl_insn *ip)
 	  if (sreg != PIC_CALL_REG)
 	    as_warn (_("MIPS PIC call to register other than $25"));
 
-	  s = (mips_opts.micromips && (!mips_opts.noreorder || cprestore)
+	  s = ((mips_opts.micromips
+		&& !mips_opts.insn32
+		&& (!mips_opts.noreorder || cprestore))
 	       ? "jalrs" : "jalr");
-	  if (mips_opts.micromips && dreg == RA)
+	  if (mips_opts.micromips && !mips_opts.insn32 && dreg == RA)
 	    macro_build (NULL, s, "mj", sreg);
 	  else
 	    macro_build (NULL, s, JALR_FMT, dreg, sreg);
@@ -7751,6 +7801,11 @@ macro (struct mips_cl_insn *ip)
 
     case M_JALS_A:
       gas_assert (mips_opts.micromips);
+      if (mips_opts.insn32)
+	{
+	  as_bad (_("Opcode not supported in the `insn32' mode `%s'"), str);
+	  break;
+	}
       jals = 1;
       /* Fall through.  */
     case M_JAL_A:
@@ -8626,6 +8681,24 @@ macro (struct mips_cl_insn *ip)
 
       break;
 
+    case M_JRADDIUSP:
+      gas_assert (mips_opts.micromips);
+      gas_assert (mips_opts.insn32);
+      start_noreorder ();
+      macro_build (NULL, "jr", "s", RA);
+      expr1.X_add_number = EXTRACT_OPERAND (1, IMMP, *ip) << 2;
+      macro_build (&expr1, "addiu", "t,r,j", SP, SP, BFD_RELOC_LO16);
+      end_noreorder ();
+      break;
+
+    case M_JRC:
+      gas_assert (mips_opts.micromips);
+      gas_assert (mips_opts.insn32);
+      macro_build (NULL, "jr", "s", sreg);
+      if (mips_opts.noreorder)
+	macro_build (NULL, "nop", "");
+      break;
+
     case M_LI:
     case M_LI_S:
       load_register (treg, &imm_expr, 0);
@@ -9118,6 +9191,54 @@ macro (struct mips_cl_insn *ip)
 	}
       break;
 
+    case M_SAA_AB:
+      s = "saa";
+      goto saa_saad;
+    case M_SAAD_AB:
+      s = "saad";
+    saa_saad:
+      gas_assert (!mips_opts.micromips);
+
+      /* The "saa/saad" instructions are new in CN58XX. These instructions
+	 do not specify offset. When invoked with address or symbol, then
+	 load the address or value of symbol in a register using the dla macro
+	 into AT, and pass the register for emitting "saa/saad" instruction.
+	 This will get expanded to
+
+	    dla AT, constant/label
+	    saa/saad $treg,(AT)  */
+
+      if (offset_expr.X_op != O_symbol
+	  && offset_expr.X_op != O_constant)
+	{
+	  as_bad (_("Expression too complex"));
+	  offset_expr.X_op = O_constant;
+	}
+
+      if (offset_expr.X_op == O_constant
+	  && offset_expr.X_add_number == 0)
+	tempreg = breg;
+      else if (offset_expr.X_op == O_constant
+	       && offset_expr.X_add_number >= -0x8000
+	       && offset_expr.X_add_number < 0x8000)
+	{
+	  used_at = 1;
+	  tempreg = AT;
+	  macro_build (&offset_expr, ADDRESS_ADDI_INSN, "t,r,j",
+		       tempreg, breg, BFD_RELOC_LO16);
+	}
+      else
+	{
+	  used_at = 1;
+	  tempreg = AT;
+	  load_address (tempreg, &offset_expr, &used_at);
+	  if (breg != 0)
+	    macro_build (NULL, ADDRESS_ADD_INSN, "d,v,t",
+			 tempreg, tempreg, breg);
+	}
+      macro_build (NULL, s, "t,(b)", treg, tempreg);
+      break;
+
    /* New code added to support COPZ instructions.
       This code builds table entries out of the macros in mip_opcodes.
       R4000 uses interlocks to handle coproc delays.
@@ -9163,6 +9284,17 @@ macro (struct mips_cl_insn *ip)
 
     case M_MOVE:
       move_register (dreg, sreg);
+      break;
+
+    case M_MOVEP:
+      gas_assert (mips_opts.micromips);
+      gas_assert (mips_opts.insn32);
+      dreg = micromips_to_32_reg_h_map[EXTRACT_OPERAND (1, MH, *ip)];
+      breg = micromips_to_32_reg_i_map[EXTRACT_OPERAND (1, MI, *ip)];
+      sreg = micromips_to_32_reg_m_map[EXTRACT_OPERAND (1, MM, *ip)];
+      treg = micromips_to_32_reg_n_map[EXTRACT_OPERAND (1, MN, *ip)];
+      move_register (dreg, sreg);
+      move_register (breg, treg);
       break;
 
     case M_DMUL:
@@ -9759,13 +9891,19 @@ macro (struct mips_cl_insn *ip)
       break;
 
     case M_ULH_A:
+      /* Swap byte accesses if INS is available.  Otherwise we prefer
+         to avoid a load-delay NOP or potential pipeline stall.  */
+      ulh_swp = ISA_HAS_INS (mips_opts.isa);
       ab = 1;
     case M_ULH:
-      s = "lb";
-      s2 = "lbu";
+      s = ulh_swp ? "lbu" : "lb";
+      s2 = ulh_swp ? "lb" : "lbu";
       off = 1;
       goto uld_st;
     case M_ULHU_A:
+      /* Swap byte accesses if INS is available.  Otherwise we prefer
+         to avoid a load-delay NOP or potential pipeline stall.  */
+      ulh_swp = ISA_HAS_INS (mips_opts.isa);
       ab = 1;
     case M_ULHU:
       s = "lbu";
@@ -9774,6 +9912,14 @@ macro (struct mips_cl_insn *ip)
       goto uld_st;
     case M_ULW_A:
       ab = 1;
+      if (!mips_opts.micromips
+	  && mips_opts.arch == CPU_OCTEON
+	  && octeon_use_unalign)
+	{
+	  s = "ulw";
+	  fmt = "t,o(b)";
+	  goto ld;
+	}
     case M_ULW:
       s = "lwl";
       s2 = "lwr";
@@ -9782,6 +9928,14 @@ macro (struct mips_cl_insn *ip)
       goto uld_st;
     case M_ULD_A:
       ab = 1;
+      if (!mips_opts.micromips
+	  && mips_opts.arch == CPU_OCTEON
+	  && octeon_use_unalign)
+	{
+	  s = "uld";
+	  fmt = "t,o(b)";
+	  goto ld;
+	}
     case M_ULD:
       s = "ldl";
       s2 = "ldr";
@@ -9798,6 +9952,14 @@ macro (struct mips_cl_insn *ip)
       goto uld_st;
     case M_USW_A:
       ab = 1;
+      if (!mips_opts.micromips
+	  && mips_opts.arch == CPU_OCTEON
+	  && octeon_use_unalign)
+	{
+	  s = "usw";
+	  fmt = "t,o(b)";
+	  goto ld_st;
+	}
     case M_USW:
       s = "swl";
       s2 = "swr";
@@ -9807,6 +9969,14 @@ macro (struct mips_cl_insn *ip)
       goto uld_st;
     case M_USD_A:
       ab = 1;
+      if (!mips_opts.micromips
+	  && mips_opts.arch == CPU_OCTEON
+	  && octeon_use_unalign)
+	{
+	  s = "usd";
+	  fmt = "t,o(b)";
+	  goto ld_st;
+	}
     case M_USD:
       s = "sdl";
       s2 = "sdr";
@@ -9885,7 +10055,7 @@ macro (struct mips_cl_insn *ip)
 
     ulh_sh:
       used_at = 1;
-      if (target_big_endian == ust)
+      if (target_big_endian == (ulh_swp || ust))
 	ep->X_add_number += off;
       tempreg = ust || ab ? treg : AT;
       macro_build (ep, s, "t,o(b)", tempreg, BFD_RELOC_LO16, breg);
@@ -9898,7 +10068,7 @@ macro (struct mips_cl_insn *ip)
       if (ust)
 	macro_build (NULL, "srl", SHFT_FMT, tempreg, treg, 8);
 
-      if (target_big_endian == ust)
+      if (target_big_endian == (ulh_swp || ust))
 	ep->X_add_number -= off;
       else
 	ep->X_add_number += off;
@@ -9916,9 +10086,14 @@ macro (struct mips_cl_insn *ip)
       /* For ULH and M_USH_A OR the LSB in.  */
       if (!ust || ab)
 	{
-	  tempreg = !ab ? AT : treg;
-	  macro_build (NULL, "sll", SHFT_FMT, tempreg, tempreg, 8);
-	  macro_build (NULL, "or", "d,v,t", treg, treg, AT);
+	  tempreg = ulh_swp || !ab ? AT : treg;
+	  if (ISA_HAS_INS (mips_opts.isa) && tempreg == AT)
+	    macro_build (NULL, "ins", "t,r,+A,+B", treg, AT, 8, 31);
+	  else
+	    {
+	      macro_build (NULL, "sll", SHFT_FMT, tempreg, tempreg, 8);
+	      macro_build (NULL, "or", "d,v,t", treg, treg, AT);
+	    }
 	}
       break;
 
@@ -10441,8 +10616,17 @@ validate_micromips_insn (const struct mips_opcode *opc)
 	break;
       case '.': USE_BITS (OFFSET10);	break;
       case '1': USE_BITS (STYPE);	break;
+      case '2': USE_BITS (BP);		break;
+      case '3': USE_BITS (SA3);		break;
+      case '4': USE_BITS (SA4);		break;
+      case '5': USE_BITS (IMM8);	break;
+      case '6': USE_BITS (RS);		break;
+      case '7': USE_BITS (DSPACC);	break;
+      case '8': USE_BITS (WRDSP);	break;
+      case '0': USE_BITS (DSPSFT);	break;
       case '<': USE_BITS (SHAMT);	break;
       case '>': USE_BITS (SHAMT);	break;
+      case '@': USE_BITS (IMM10);	break;
       case 'B': USE_BITS (CODE10);	break;
       case 'C': USE_BITS (COPZ);	break;
       case 'D': USE_BITS (FD);		break;
@@ -10457,6 +10641,7 @@ validate_micromips_insn (const struct mips_opcode *opc)
       case 'T': USE_BITS (FT);		break;
       case 'V': USE_BITS (FS);		break;
       case '\\': USE_BITS (3BITPOS);	break;
+      case '^': USE_BITS (RD);		break;
       case 'a': USE_BITS (TARGET);	break;
       case 'b': USE_BITS (RS);		break;
       case 'c': USE_BITS (CODE);	break;
@@ -10678,6 +10863,31 @@ mips_ip (char *str, struct mips_cl_insn *ip)
 	  firstinsn = insn;
 	  wrong_delay_slot_insns = TRUE;
 	}
+      if (!mips_opts.micromips
+	  && mips_opts.arch == CPU_OCTEON)
+	{
+	  if (!octeon_use_unalign
+	      && insn->pinfo != INSN_MACRO
+	      && (strcmp (insn->name, "ulw") == 0
+		  || strcmp (insn->name, "uld") == 0
+		  || strcmp (insn->name, "usw") == 0
+		  || strcmp (insn->name, "usd") == 0))
+	    ok = FALSE;
+	  if (octeon_use_unalign
+	      && (strcmp (insn->name, "lwl") == 0
+		  || strcmp (insn->name, "lwr") == 0
+		  || strcmp (insn->name, "ldl") == 0
+		  || strcmp (insn->name, "ldr") == 0
+		  || strcmp (insn->name, "sdl") == 0
+		  || strcmp (insn->name, "sdr") == 0
+		  || strcmp (insn->name, "swr") == 0
+		  || strcmp (insn->name, "swl") == 0))
+	    {
+	      ok = FALSE;
+	      insn_error = _("Unaligned load/store instructions are not "
+			     "allowed with -mocteon-useun");
+	    }
+	}
       if (!ok || !size_ok || delay_slot_ok != need_delay_slot_ok)
 	{
 	  static char buf[256];
@@ -10703,6 +10913,8 @@ mips_ip (char *str, struct mips_cl_insn *ip)
 	    sprintf (buf, _("opcode not supported on this processor: %s (%s)"),
 		     mips_cpu_info_from_arch (mips_opts.arch)->name,
 		     mips_cpu_info_from_isa (mips_opts.isa)->name);
+	  else if (mips_opts.insn32)
+	    sprintf (buf, _("Opcode not supported in the `insn32' mode"));
 	  else
 	    sprintf (buf, _("Unrecognized %u-bit version of microMIPS opcode"),
 		     8 * forced_insn_length);
@@ -10728,8 +10940,7 @@ mips_ip (char *str, struct mips_cl_insn *ip)
 		return;
 	      break;
 
-	    case '2': /* DSP 2-bit unsigned immediate in bit 11.  */
-	      gas_assert (!mips_opts.micromips);
+	    case '2': /* DSP 2-bit unsigned immediate in bit 11 or 14.  */
 	      my_getExpression (&imm_expr, s);
 	      check_absolute_expr (ip, &imm_expr);
 	      if ((unsigned long) imm_expr.X_add_number != 1
@@ -10738,100 +10949,115 @@ mips_ip (char *str, struct mips_cl_insn *ip)
 		  as_bad (_("BALIGN immediate not 1 or 3 (%lu)"),
 			  (unsigned long) imm_expr.X_add_number);
 		}
-	      INSERT_OPERAND (0, BP, *ip, imm_expr.X_add_number);
+	      INSERT_OPERAND (mips_opts.micromips,
+			      BP, *ip, imm_expr.X_add_number);
 	      imm_expr.X_op = O_absent;
 	      s = expr_end;
 	      continue;
 
-	    case '3': /* DSP 3-bit unsigned immediate in bit 21.  */
-	      gas_assert (!mips_opts.micromips);
-	      my_getExpression (&imm_expr, s);
-	      check_absolute_expr (ip, &imm_expr);
-	      if (imm_expr.X_add_number & ~OP_MASK_SA3)
-		{
-		  as_bad (_("DSP immediate not in range 0..%d (%lu)"),
-			  OP_MASK_SA3, (unsigned long) imm_expr.X_add_number);
-		}
-	      INSERT_OPERAND (0, SA3, *ip, imm_expr.X_add_number);
-	      imm_expr.X_op = O_absent;
-	      s = expr_end;
+	    case '3': /* DSP 3-bit unsigned immediate in bit 13 or 21.  */
+	      {
+		unsigned long mask = (mips_opts.micromips
+				      ? MICROMIPSOP_MASK_SA3 : OP_MASK_SA3);
+
+		my_getExpression (&imm_expr, s);
+		check_absolute_expr (ip, &imm_expr);
+		if ((unsigned long) imm_expr.X_add_number > mask)
+		  as_bad (_("DSP immediate not in range 0..%lu (%lu)"),
+			  mask, (unsigned long) imm_expr.X_add_number);
+		INSERT_OPERAND (mips_opts.micromips,
+				SA3, *ip, imm_expr.X_add_number);
+		imm_expr.X_op = O_absent;
+		s = expr_end;
+	      }
 	      continue;
 
-	    case '4': /* DSP 4-bit unsigned immediate in bit 21.  */
-	      gas_assert (!mips_opts.micromips);
-	      my_getExpression (&imm_expr, s);
-	      check_absolute_expr (ip, &imm_expr);
-	      if (imm_expr.X_add_number & ~OP_MASK_SA4)
-		{
-		  as_bad (_("DSP immediate not in range 0..%d (%lu)"),
-			  OP_MASK_SA4, (unsigned long) imm_expr.X_add_number);
-		}
-	      INSERT_OPERAND (0, SA4, *ip, imm_expr.X_add_number);
-	      imm_expr.X_op = O_absent;
-	      s = expr_end;
+	    case '4': /* DSP 4-bit unsigned immediate in bit 12 or 21.  */
+	      {
+		unsigned long mask = (mips_opts.micromips
+				      ? MICROMIPSOP_MASK_SA4 : OP_MASK_SA4);
+
+		my_getExpression (&imm_expr, s);
+		check_absolute_expr (ip, &imm_expr);
+		if ((unsigned long) imm_expr.X_add_number > mask)
+		  as_bad (_("DSP immediate not in range 0..%lu (%lu)"),
+			  mask, (unsigned long) imm_expr.X_add_number);
+		INSERT_OPERAND (mips_opts.micromips,
+				SA4, *ip, imm_expr.X_add_number);
+		imm_expr.X_op = O_absent;
+		s = expr_end;
+	      }
 	      continue;
 
-	    case '5': /* DSP 8-bit unsigned immediate in bit 16.  */
-	      gas_assert (!mips_opts.micromips);
-	      my_getExpression (&imm_expr, s);
-	      check_absolute_expr (ip, &imm_expr);
-	      if (imm_expr.X_add_number & ~OP_MASK_IMM8)
-		{
-		  as_bad (_("DSP immediate not in range 0..%d (%lu)"),
-			  OP_MASK_IMM8, (unsigned long) imm_expr.X_add_number);
-		}
-	      INSERT_OPERAND (0, IMM8, *ip, imm_expr.X_add_number);
-	      imm_expr.X_op = O_absent;
-	      s = expr_end;
+	    case '5': /* DSP 8-bit unsigned immediate in bit 13 or 16.  */
+	      {
+		unsigned long mask = (mips_opts.micromips
+				      ? MICROMIPSOP_MASK_IMM8 : OP_MASK_IMM8);
+
+		my_getExpression (&imm_expr, s);
+		check_absolute_expr (ip, &imm_expr);
+		if ((unsigned long) imm_expr.X_add_number > mask)
+		  as_bad (_("DSP immediate not in range 0..%lu (%lu)"),
+			  mask, (unsigned long) imm_expr.X_add_number);
+		INSERT_OPERAND (mips_opts.micromips,
+				IMM8, *ip, imm_expr.X_add_number);
+		imm_expr.X_op = O_absent;
+		s = expr_end;
+	      }
 	      continue;
 
-	    case '6': /* DSP 5-bit unsigned immediate in bit 21.  */
-	      gas_assert (!mips_opts.micromips);
-	      my_getExpression (&imm_expr, s);
-	      check_absolute_expr (ip, &imm_expr);
-	      if (imm_expr.X_add_number & ~OP_MASK_RS)
-		{
-		  as_bad (_("DSP immediate not in range 0..%d (%lu)"),
-			  OP_MASK_RS, (unsigned long) imm_expr.X_add_number);
-		}
-	      INSERT_OPERAND (0, RS, *ip, imm_expr.X_add_number);
-	      imm_expr.X_op = O_absent;
-	      s = expr_end;
+	    case '6': /* DSP 5-bit unsigned immediate in bit 16 or 21.  */
+	      {
+		unsigned long mask = (mips_opts.micromips
+				      ? MICROMIPSOP_MASK_RS : OP_MASK_RS);
+
+		my_getExpression (&imm_expr, s);
+		check_absolute_expr (ip, &imm_expr);
+		if ((unsigned long) imm_expr.X_add_number > mask)
+		  as_bad (_("DSP immediate not in range 0..%lu (%lu)"),
+			  mask, (unsigned long) imm_expr.X_add_number);
+		INSERT_OPERAND (mips_opts.micromips,
+				RS, *ip, imm_expr.X_add_number);
+		imm_expr.X_op = O_absent;
+		s = expr_end;
+	      }
 	      continue;
 
 	    case '7': /* Four DSP accumulators in bits 11,12.  */
-	      gas_assert (!mips_opts.micromips);
-	      if (s[0] == '$' && s[1] == 'a' && s[2] == 'c' &&
-		  s[3] >= '0' && s[3] <= '3')
+	      if (s[0] == '$' && s[1] == 'a' && s[2] == 'c'
+		  && s[3] >= '0' && s[3] <= '3')
 		{
 		  regno = s[3] - '0';
 		  s += 4;
-		  INSERT_OPERAND (0, DSPACC, *ip, regno);
+		  INSERT_OPERAND (mips_opts.micromips, DSPACC, *ip, regno);
 		  continue;
 		}
 	      else
 		as_bad (_("Invalid dsp acc register"));
 	      break;
 
-	    case '8': /* DSP 6-bit unsigned immediate in bit 11.  */
-	      gas_assert (!mips_opts.micromips);
-	      my_getExpression (&imm_expr, s);
-	      check_absolute_expr (ip, &imm_expr);
-	      if (imm_expr.X_add_number & ~OP_MASK_WRDSP)
-		{
-		  as_bad (_("DSP immediate not in range 0..%d (%lu)"),
-			  OP_MASK_WRDSP,
-			  (unsigned long) imm_expr.X_add_number);
-		}
-	      INSERT_OPERAND (0, WRDSP, *ip, imm_expr.X_add_number);
-	      imm_expr.X_op = O_absent;
-	      s = expr_end;
+	    case '8': /* DSP 6-bit unsigned immediate in bit 11 or 14.  */
+	      {
+		unsigned long mask = (mips_opts.micromips
+				      ? MICROMIPSOP_MASK_WRDSP
+				      : OP_MASK_WRDSP);
+
+		my_getExpression (&imm_expr, s);
+		check_absolute_expr (ip, &imm_expr);
+		if ((unsigned long) imm_expr.X_add_number > mask)
+		  as_bad (_("DSP immediate not in range 0..%lu (%lu)"),
+			  mask, (unsigned long) imm_expr.X_add_number);
+		INSERT_OPERAND (mips_opts.micromips,
+				WRDSP, *ip, imm_expr.X_add_number);
+		imm_expr.X_op = O_absent;
+		s = expr_end;
+	      }
 	      continue;
 
 	    case '9': /* Four DSP accumulators in bits 21,22.  */
 	      gas_assert (!mips_opts.micromips);
-	      if (s[0] == '$' && s[1] == 'a' && s[2] == 'c' &&
-		  s[3] >= '0' && s[3] <= '3')
+	      if (s[0] == '$' && s[1] == 'a' && s[2] == 'c'
+		  && s[3] >= '0' && s[3] <= '3')
 		{
 		  regno = s[3] - '0';
 		  s += 4;
@@ -10842,22 +11068,25 @@ mips_ip (char *str, struct mips_cl_insn *ip)
 		as_bad (_("Invalid dsp acc register"));
 	      break;
 
-	    case '0': /* DSP 6-bit signed immediate in bit 20.  */
-	      gas_assert (!mips_opts.micromips);
-	      my_getExpression (&imm_expr, s);
-	      check_absolute_expr (ip, &imm_expr);
-	      min_range = -((OP_MASK_DSPSFT + 1) >> 1);
-	      max_range = ((OP_MASK_DSPSFT + 1) >> 1) - 1;
-	      if (imm_expr.X_add_number < min_range ||
-		  imm_expr.X_add_number > max_range)
-		{
+	    case '0': /* DSP 6-bit signed immediate in bit 16 or 20.  */
+	      {
+		long mask = (mips_opts.micromips
+			     ? MICROMIPSOP_MASK_DSPSFT : OP_MASK_DSPSFT);
+
+		my_getExpression (&imm_expr, s);
+		check_absolute_expr (ip, &imm_expr);
+		min_range = -((mask + 1) >> 1);
+		max_range = ((mask + 1) >> 1) - 1;
+		if (imm_expr.X_add_number < min_range
+		    || imm_expr.X_add_number > max_range)
 		  as_bad (_("DSP immediate not in range %ld..%ld (%ld)"),
 			  (long) min_range, (long) max_range,
 			  (long) imm_expr.X_add_number);
-		}
-	      INSERT_OPERAND (0, DSPSFT, *ip, imm_expr.X_add_number);
-	      imm_expr.X_op = O_absent;
-	      s = expr_end;
+		INSERT_OPERAND (mips_opts.micromips,
+				DSPSFT, *ip, imm_expr.X_add_number);
+		imm_expr.X_op = O_absent;
+		s = expr_end;
+	      }
 	      continue;
 
 	    case '\'': /* DSP 6-bit unsigned immediate in bit 16.  */
@@ -10894,19 +11123,35 @@ mips_ip (char *str, struct mips_cl_insn *ip)
 	      continue;
 
 	    case '@': /* DSP 10-bit signed immediate in bit 16.  */
-	      gas_assert (!mips_opts.micromips);
-	      my_getExpression (&imm_expr, s);
-	      check_absolute_expr (ip, &imm_expr);
-	      min_range = -((OP_MASK_IMM10 + 1) >> 1);
-	      max_range = ((OP_MASK_IMM10 + 1) >> 1) - 1;
-	      if (imm_expr.X_add_number < min_range ||
-		  imm_expr.X_add_number > max_range)
-		{
+	      {
+		long mask = (mips_opts.micromips
+			     ? MICROMIPSOP_MASK_IMM10 : OP_MASK_IMM10);
+
+		my_getExpression (&imm_expr, s);
+		check_absolute_expr (ip, &imm_expr);
+		min_range = -((mask + 1) >> 1);
+		max_range = ((mask + 1) >> 1) - 1;
+		if (imm_expr.X_add_number < min_range
+		    || imm_expr.X_add_number > max_range)
 		  as_bad (_("DSP immediate not in range %ld..%ld (%ld)"),
 			  (long) min_range, (long) max_range,
 			  (long) imm_expr.X_add_number);
-		}
-	      INSERT_OPERAND (0, IMM10, *ip, imm_expr.X_add_number);
+		INSERT_OPERAND (mips_opts.micromips,
+				IMM10, *ip, imm_expr.X_add_number);
+		imm_expr.X_op = O_absent;
+		s = expr_end;
+	      }
+	      continue;
+
+	    case '^': /* DSP 5-bit unsigned immediate in bit 11.  */
+	      gas_assert (mips_opts.micromips);
+	      my_getExpression (&imm_expr, s);
+	      check_absolute_expr (ip, &imm_expr);
+	      if (imm_expr.X_add_number & ~MICROMIPSOP_MASK_RD)
+		as_bad (_("DSP immediate not in range 0..%d (%lu)"),
+			MICROMIPSOP_MASK_RD,
+			(unsigned long) imm_expr.X_add_number);
+	      INSERT_OPERAND (1, RD, *ip, imm_expr.X_add_number);
 	      imm_expr.X_op = O_absent;
 	      s = expr_end;
 	      continue;
@@ -14041,7 +14286,14 @@ static const struct percent_op_match mips16_percent_op[] =
   {"%gprel", BFD_RELOC_MIPS16_GPREL},
   {"%got", BFD_RELOC_MIPS16_GOT16},
   {"%call16", BFD_RELOC_MIPS16_CALL16},
-  {"%hi", BFD_RELOC_MIPS16_HI16_S}
+  {"%hi", BFD_RELOC_MIPS16_HI16_S},
+  {"%tlsgd", BFD_RELOC_MIPS16_TLS_GD},
+  {"%tlsldm", BFD_RELOC_MIPS16_TLS_LDM},
+  {"%dtprel_hi", BFD_RELOC_MIPS16_TLS_DTPREL_HI16},
+  {"%dtprel_lo", BFD_RELOC_MIPS16_TLS_DTPREL_LO16},
+  {"%tprel_hi", BFD_RELOC_MIPS16_TLS_TPREL_HI16},
+  {"%tprel_lo", BFD_RELOC_MIPS16_TLS_TPREL_LO16},
+  {"%gottprel", BFD_RELOC_MIPS16_TLS_GOTTPREL}
 };
 
 
@@ -14263,6 +14515,8 @@ enum options
     OPTION_GP64,
     OPTION_RELAX_BRANCH,
     OPTION_NO_RELAX_BRANCH,
+    OPTION_INSN32,
+    OPTION_NO_INSN32,
     OPTION_MSHARED,
     OPTION_MNO_SHARED,
     OPTION_MSYM32,
@@ -14271,6 +14525,8 @@ enum options
     OPTION_HARD_FLOAT,
     OPTION_SINGLE_FLOAT,
     OPTION_DOUBLE_FLOAT,
+    OPTION_OCTEON_UNALIGNED,
+    OPTION_NO_OCTEON_UNALIGNED,
     OPTION_32,
 #ifdef OBJ_ELF
     OPTION_CALL_SHARED,
@@ -14325,6 +14581,10 @@ struct option md_longopts[] =
   {"mmcu", no_argument, NULL, OPTION_MCU},
   {"mno-mcu", no_argument, NULL, OPTION_NO_MCU},
 
+  /* SDE backward compatibility alias.  */
+  {"mips16e", no_argument, NULL, OPTION_MIPS16},
+  {"no-mips16e", no_argument, NULL, OPTION_NO_MIPS16},
+
   /* Old-style architecture options.  Don't add more of these.  */
   {"m4650", no_argument, NULL, OPTION_M4650},
   {"no-m4650", no_argument, NULL, OPTION_NO_M4650},
@@ -14367,6 +14627,8 @@ struct option md_longopts[] =
   {"mgp64", no_argument, NULL, OPTION_GP64},
   {"relax-branch", no_argument, NULL, OPTION_RELAX_BRANCH},
   {"no-relax-branch", no_argument, NULL, OPTION_NO_RELAX_BRANCH},
+  {"minsn32", no_argument, NULL, OPTION_INSN32},
+  {"mno-insn32", no_argument, NULL, OPTION_NO_INSN32},
   {"mshared", no_argument, NULL, OPTION_MSHARED},
   {"mno-shared", no_argument, NULL, OPTION_MNO_SHARED},
   {"msym32", no_argument, NULL, OPTION_MSYM32},
@@ -14375,6 +14637,8 @@ struct option md_longopts[] =
   {"mhard-float", no_argument, NULL, OPTION_HARD_FLOAT},
   {"msingle-float", no_argument, NULL, OPTION_SINGLE_FLOAT},
   {"mdouble-float", no_argument, NULL, OPTION_DOUBLE_FLOAT},
+  {"mocteon-useun", no_argument, NULL, OPTION_OCTEON_UNALIGNED},
+  {"mno-octeon-useun", no_argument, NULL, OPTION_NO_OCTEON_UNALIGNED},
 
   /* Strictly speaking this next option is ELF specific,
      but we allow it for other ports as well in order to
@@ -14386,6 +14650,7 @@ struct option md_longopts[] =
   {"KPIC",        no_argument, NULL, OPTION_CALL_SHARED},
   {"call_shared", no_argument, NULL, OPTION_CALL_SHARED},
   {"call_nonpic", no_argument, NULL, OPTION_CALL_NONPIC},
+  {"mnon-pic-abicalls", no_argument, NULL, OPTION_CALL_NONPIC},
   {"non_shared",  no_argument, NULL, OPTION_NON_SHARED},
   {"xgot",        no_argument, NULL, OPTION_XGOT},
   {"mabi", required_argument, NULL, OPTION_MABI},
@@ -14688,6 +14953,14 @@ md_parse_option (int c, char *arg)
       mips_relax_branch = 0;
       break;
 
+    case OPTION_INSN32:
+      mips_opts.insn32 = TRUE;
+      break;
+
+    case OPTION_NO_INSN32:
+      mips_opts.insn32 = FALSE;
+      break;
+
     case OPTION_MSHARED:
       mips_in_shared = TRUE;
       break;
@@ -14702,6 +14975,14 @@ md_parse_option (int c, char *arg)
 
     case OPTION_MNO_SYM32:
       mips_opts.sym32 = FALSE;
+      break;
+
+    case OPTION_OCTEON_UNALIGNED:
+      octeon_use_unalign = 1;
+      break;
+
+    case OPTION_NO_OCTEON_UNALIGNED:
+      octeon_use_unalign = 0;
       break;
 
 #ifdef OBJ_ELF
@@ -15370,6 +15651,8 @@ md_apply_fix (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
     case BFD_RELOC_MIPS_TLS_DTPREL_HI16:
     case BFD_RELOC_MIPS_TLS_DTPREL_LO16:
     case BFD_RELOC_MIPS_TLS_GOTTPREL:
+    case BFD_RELOC_MIPS_TLS_TPREL32:
+    case BFD_RELOC_MIPS_TLS_TPREL64:
     case BFD_RELOC_MIPS_TLS_TPREL_HI16:
     case BFD_RELOC_MIPS_TLS_TPREL_LO16:
     case BFD_RELOC_MICROMIPS_TLS_GD:
@@ -15379,6 +15662,13 @@ md_apply_fix (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
     case BFD_RELOC_MICROMIPS_TLS_GOTTPREL:
     case BFD_RELOC_MICROMIPS_TLS_TPREL_HI16:
     case BFD_RELOC_MICROMIPS_TLS_TPREL_LO16:
+    case BFD_RELOC_MIPS16_TLS_GD:
+    case BFD_RELOC_MIPS16_TLS_LDM:
+    case BFD_RELOC_MIPS16_TLS_DTPREL_HI16:
+    case BFD_RELOC_MIPS16_TLS_DTPREL_LO16:
+    case BFD_RELOC_MIPS16_TLS_GOTTPREL:
+    case BFD_RELOC_MIPS16_TLS_TPREL_HI16:
+    case BFD_RELOC_MIPS16_TLS_TPREL_LO16:
       S_SET_THREAD_LOCAL (fixP->fx_addsy);
       /* fall through */
 
@@ -16215,6 +16505,10 @@ s_mipsset (int x ATTRIBUTE_UNUSED)
     mips_opts.noautoextend = 0;
   else if (strcmp (name, "noautoextend") == 0)
     mips_opts.noautoextend = 1;
+  else if (strcmp (name, "insn32") == 0)
+    mips_opts.insn32 = TRUE;
+  else if (strcmp (name, "noinsn32") == 0)
+    mips_opts.insn32 = FALSE;
   else if (strcmp (name, "push") == 0)
     {
       struct mips_option_stack *s;
@@ -16548,12 +16842,14 @@ s_cpreturn (int ignore ATTRIBUTE_UNUSED)
   demand_empty_rest_of_line ();
 }
 
-/* Handle the .dtprelword and .dtpreldword pseudo-ops.  They generate
-   a 32-bit or 64-bit DTP-relative relocation (BYTES says which) for
-   use in DWARF debug information.  */
+/* Handle the .dtprelword, .dtpreldword, .tprelword, .tpreldword
+   pseudo-ops.  They generate a 32-bit or 64-bit DTP/TP-relative
+   relocation (BYTES says which) for use in either DWARF debug
+   information, or MIPS16 TLS.  */
 
 static void
-s_dtprel_internal (size_t bytes)
+s_tls_rel_directive (const size_t bytes, const char* dirstr,
+		     bfd_reloc_code_real_type rtype)
 {
   expressionS ex;
   char *p;
@@ -16562,19 +16858,13 @@ s_dtprel_internal (size_t bytes)
 
   if (ex.X_op != O_symbol)
     {
-      as_bad (_("Unsupported use of %s"), (bytes == 8
-					   ? ".dtpreldword"
-					   : ".dtprelword"));
+      as_bad (_("Unsupported use of %s"), dirstr);
       ignore_rest_of_line ();
     }
 
   p = frag_more (bytes);
   md_number_to_chars (p, 0, bytes);
-  fix_new_exp (frag_now, p - frag_now->fr_literal, bytes, &ex, FALSE,
-	       (bytes == 8
-		? BFD_RELOC_MIPS_TLS_DTPREL64
-		: BFD_RELOC_MIPS_TLS_DTPREL32));
-
+  fix_new_exp (frag_now, p - frag_now->fr_literal, bytes, &ex, FALSE, rtype);
   demand_empty_rest_of_line ();
 }
 
@@ -16583,7 +16873,7 @@ s_dtprel_internal (size_t bytes)
 static void
 s_dtprelword (int ignore ATTRIBUTE_UNUSED)
 {
-  s_dtprel_internal (4);
+  s_tls_rel_directive (4, ".dtprelword", BFD_RELOC_MIPS_TLS_DTPREL32);
 }
 
 /* Handle .dtpreldword.  */
@@ -16591,7 +16881,23 @@ s_dtprelword (int ignore ATTRIBUTE_UNUSED)
 static void
 s_dtpreldword (int ignore ATTRIBUTE_UNUSED)
 {
-  s_dtprel_internal (8);
+  s_tls_rel_directive (8, ".dtpreldword", BFD_RELOC_MIPS_TLS_DTPREL64);
+}
+
+/* Handle .tprelword.  */
+
+static void
+s_tprelword (int ignore ATTRIBUTE_UNUSED)
+{
+  s_tls_rel_directive (4, ".tprelword", BFD_RELOC_MIPS_TLS_TPREL32);
+}
+
+/* Handle .tpreldword.  */
+
+static void
+s_tpreldword (int ignore ATTRIBUTE_UNUSED)
+{
+  s_tls_rel_directive (8, ".tpreldword", BFD_RELOC_MIPS_TLS_TPREL64);
 }
 
 /* Handle the .gpvalue pseudo-op.  This is used when generating NewABI PIC
@@ -17451,11 +17757,16 @@ mips_fix_adjustable (fixS *fixp)
      relocation, and has thus allowed orphaned R_MIPS_LO16 relocations to be
      placed anywhere.  Rather than break backwards compatibility by changing
      this, it seems better not to force the issue, and instead keep the
-     original symbol.  This will work with either linker behavior.  */
+     original symbol.  This will work with either linker behavior.
+
+     Additionally microMIPS HI16/LO16 relocation pairs may be subject to
+     linker relaxation to the PC-relative PC23_S2 relocation that may
+     overflow in the process.  */
   if ((lo16_reloc_p (fixp->fx_r_type)
        || reloc_needs_lo_p (fixp->fx_r_type))
       && HAVE_IN_PLACE_ADDENDS
-      && (S_GET_SEGMENT (fixp->fx_addsy)->flags & SEC_MERGE) != 0)
+      && (micromips_reloc_p (fixp->fx_r_type)
+	  || S_GET_SEGMENT (fixp->fx_addsy)->flags & SEC_MERGE) != 0)
     return 0;
 
   /* There is no place to store an in-place offset for JALR relocations.
@@ -18532,7 +18843,7 @@ mips_handle_align (fragS *fragp)
       *p++ = '\0';
       /* Fall through.  */
     case 2:
-      if (nop_opcode == NOP_OPCODE_MICROMIPS)
+      if (nop_opcode == NOP_OPCODE_MICROMIPS && !mips_opts.insn32)
 	{
 	  md_number_to_chars (p, micromips_nop16_insn.insn_opcode, 2);
 	  p += 2;
@@ -18964,6 +19275,10 @@ static const struct mips_cpu_info mips_cpu_info_table[] =
   { "m4kp",           0,			ISA_MIPS32R2,   CPU_MIPS32R2 },
   { "m14k",           MIPS_CPU_ASE_MCU,		ISA_MIPS32R2,   CPU_MIPS32R2 },
   { "m14kc",          MIPS_CPU_ASE_MCU,		ISA_MIPS32R2,   CPU_MIPS32R2 },
+  { "m14ke",          MIPS_CPU_ASE_MCU | MIPS_CPU_ASE_DSPR2,
+						ISA_MIPS32R2,   CPU_MIPS32R2 },
+  { "m14kec",         MIPS_CPU_ASE_MCU | MIPS_CPU_ASE_DSPR2,
+						ISA_MIPS32R2,   CPU_MIPS32R2 },
   { "24kc",           0,			ISA_MIPS32R2,   CPU_MIPS32R2 },
   { "24kf2_1",        0,			ISA_MIPS32R2,   CPU_MIPS32R2 },
   { "24kf",           0,			ISA_MIPS32R2,   CPU_MIPS32R2 },
@@ -18993,6 +19308,8 @@ static const struct mips_cpu_info mips_cpu_info_table[] =
 						ISA_MIPS32R2,	CPU_MIPS32R2 },
   { "34kx",           MIPS_CPU_ASE_DSP | MIPS_CPU_ASE_MT,
 						ISA_MIPS32R2,	CPU_MIPS32R2 },
+  /* 34Kn is a 34kc without DSP.  */
+  { "34kn",           MIPS_CPU_ASE_MT,		ISA_MIPS32R2,	CPU_MIPS32R2 },
   /* 74K with DSP and DSPR2 ASE, other ASEs are optional.  */
   { "74kc",           MIPS_CPU_ASE_DSP | MIPS_CPU_ASE_DSPR2,
 						ISA_MIPS32R2,	CPU_MIPS32R2 },
@@ -19266,6 +19583,12 @@ MIPS options:\n\
   fprintf (stream, _("\
 -mmcu			generate MCU instructions\n\
 -mno-mcu		do not generate MCU instructions\n"));
+  fprintf (stream, _("\
+-mocteon-useun		use Octeon-specific unaligned loads/stores for 32/64-bit data (default)\n\
+-mno-octeon-useun	do not use Octeon-specific unaligned loads/stores for 32/64-bit data\n"));
+  fprintf (stream, _("\
+-minsn32		only generate 32-bit microMIPS instructions\n\
+-mno-insn32		generate all microMIPS instructions\n"));
   fprintf (stream, _("\
 -mfix-loongson2f-jump	work around Loongson2F JUMP instructions\n\
 -mfix-loongson2f-nop	work around Loongson2F NOP errata\n\

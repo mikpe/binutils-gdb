@@ -312,6 +312,19 @@ gcc(1), ld(1), and the Info entries for @file{binutils} and @file{ld}.
 @emph{Target H8/300 options:}
    [-h-tick-hex]
 @end ifset
+@ifset HEXAGON
+
+@emph{Target Hexagon options:}
+   [@b{-G} @var{size}]
+   [@b{-mv2}|@b{-mv3}|@b{-mv4}|@b{-mv5}]
+   [@b{-march=v2}|@b{-march=v3}|@b{-march=v4}|@b{-march=v5}]
+   [@b{-mcpu=v2}|@b{-mcpu=v3}|@b{-mcpu=v4}|@b{-mcpu=v5}]
+   [@b{-mfalign-info}|@b{-mfalign-warn}]
+   [@b{-mno-extender}|@b{-mno-jumps}|@b{-mno-jumps-long}]
+   [@b{-mno-pairing}|@b{-mno-pairing-branch}|@b{-mno-pairing-duplex}]
+   [@b{-mpairing-info}]
+   [@b{-m[no-]sort-sda}]
+@end ifset
 @ifset HPPA
 @c HPPA has no machine-dependent assembler options (yet).
 @end ifset
@@ -402,6 +415,7 @@ gcc(1), ld(1), and the Info entries for @file{binutils} and @file{ld}.
    [@b{-mdspr2}] [@b{-mno-dspr2}]
    [@b{-mmt}] [@b{-mno-mt}]
    [@b{-mmcu}] [@b{-mno-mcu}]
+   [@b{-minsn32}] [@b{-mno-insn32}]
    [@b{-mfix7000}] [@b{-mno-fix7000}]
    [@b{-mfix-vr4120}] [@b{-mno-fix-vr4120}]
    [@b{-mfix-vr4130}] [@b{-mno-fix-vr4130}]
@@ -1066,6 +1080,71 @@ This option is only useful for testing @command{@value{AS}}.
 @end table
 @end ifset
 
+@ifset HEXAGON
+The following options are available when @command{@value{AS}} is configured
+for the Hexagon architecture:
+
+@table @gcctabopt
+
+@item -G @var{size}
+Set the maximum @var{size} of objects in the small-data area, accessible via
+the GP register (default is @code{8}).
+
+@item -march=v2
+@itemx -march=v3
+@itemx -march=v4
+@itemx -march=v5
+Select a variant of the Hexagon architecture,
+V2, V3, V4, or V5 (default is @code{-march=v2}).
+
+@item -mcpu=v2
+@itemx -mcpu=v3
+@itemx -mcpu=v4
+@itemx -mcpu=v5
+These are equivalent to the corresponding @code{-march} options.
+
+@item -mv2
+@itemx -mv3
+@itemx -mv4
+@itemx -mv5
+These are equivalent to the corresponding @code{-march} options.
+
+@item -mfalign-info
+Report statistics for the effects of the directive @code{.falign}.
+
+@item -mfalign-warn
+Warn when the directive @code{.falign} results in padding instructions
+being added.
+
+@item -mno-extender
+Disable the use of constant extenders in Hexagon V4 and V5.
+
+@item -mno-jumps
+Disable automatic extension of some branch instructions in Hexagon V4 and V5.
+
+@item -mno-jumps-long
+Disable automatic extension of long (non-paired) branch instructions in
+Hexagon V4 and V5.
+
+@item -mno-pairing
+Disable pairing of packet instructions in Hexagon V4 and V5.
+
+@item -mno-pairing-branch
+Disable pairing of branch instructions in Hexagon V4 and V5.
+
+@item -mno-pairing-duplex
+Disable pairing to duplex instructions in Hexagon V4 and V5.
+
+@item -mpairing-info
+Report about instruction pairing in Hexagon V4 and V5.
+
+@item -m[no-]sort-sda
+Enable [disable] sorting the objects in the small-data area by their access size
+(enabled by default).
+
+@end table
+@end ifset
+
 @ifset SPARC
 The following options are available when @command{@value{AS}} is configured
 for the SPARC architecture:
@@ -1229,6 +1308,16 @@ This tells the assembler to accept MT instructions.
 Generate code for the MCU Application Specific Extension.
 This tells the assembler to accept MCU instructions.
 @samp{-mno-mcu} turns off this option.
+
+@item -minsn32
+@itemx -mno-insn32
+Only use 32-bit instruction encodings when generating code for the
+microMIPS processor.  This option inhibits the use of any 16-bit
+instructions.  This is equivalent to putting @code{.set insn32} at
+the start of the assembly file.  @samp{-mno-insn32} turns off this
+option.  This is equivalent to putting @code{.set noinsn32} at the
+start of the assembly file.  By default @samp{-mno-insn32} is
+selected, allowing all instructions to be used.
 
 @item --construct-floats
 @itemx --no-construct-floats
@@ -3358,6 +3447,11 @@ equals sign @samp{=}@samp{=} here represents an equivalent of the
 
 @ifset Blackfin
 Blackfin does not support symbol assignment with @samp{=}.
+@end ifset
+
+@ifset HEXAGON
+Hexagon does not support symbol assignment with @samp{=}, since this
+syntax has other meaning in the assembly language.
 @end ifset
 
 @node Symbol Names
@@ -6919,6 +7013,9 @@ subject, see the hardware manufacturer's manual.
 @ifset RX
 * RX-Dependent::                RX Dependent Features
 @end ifset
+@ifset HEXAGON
+* Hexagon-Dependent::           Hexagon Dependent Features
+@end ifset
 @ifset S390
 * S/390-Dependent::             IBM S/390 Dependent Features
 @end ifset
@@ -7027,6 +7124,10 @@ family.
 
 @ifset H8/300
 @include c-h8300.texi
+@end ifset
+
+@ifset HEXAGON
+@include c-hexagon.texi
 @end ifset
 
 @ifset HPPA

@@ -108,6 +108,7 @@ host_modules= { module= libtermcap; no_check=true;
                 missing=distclean;
                 missing=maintainer-clean; };
 host_modules= { module= utils; no_check=true; };
+host_modules= { module= convert; no_check=true; };
 host_modules= { module= gnattools; };
 host_modules= { module= lto-plugin; bootstrap=true;
 		extra_configure_flags=--enable-shared; };
@@ -465,6 +466,9 @@ dependencies = { module=all-flex; on=all-m4; };
 dependencies = { module=all-flex; on=all-build-texinfo; };
 dependencies = { module=all-m4; on=all-intl; };
 dependencies = { module=all-m4; on=all-build-texinfo; };
+
+// MIPS special
+dependencies = { module=all-convert; on=all-libiberty; };
 
 // Target modules.  These can also have dependencies on the language
 // environment (e.g. on libstdc++).  By default target modules depend

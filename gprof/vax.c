@@ -219,11 +219,11 @@ vax_offset (unsigned char *modep)
       fprintf (stderr, "[reladdr] not relative address\n");
       return 0;
     case byterel:
-      return 1 + bfd_get_signed_8 (core_bfd, modep);
+      return 1 + bfd_get_signed_8 (core_bfd[0], modep);
     case wordrel:
-      return 2 + bfd_get_signed_16 (core_bfd, modep);
+      return 2 + bfd_get_signed_16 (core_bfd[0], modep);
     case longrel:
-      return 4 + bfd_get_signed_32 (core_bfd, modep);
+      return 4 + bfd_get_signed_32 (core_bfd[0], modep);
     }
 }
 

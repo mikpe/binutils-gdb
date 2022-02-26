@@ -139,8 +139,13 @@ typedef BFD_HOST_U_64_BIT symvalue;
 #endif
 
 #ifndef fprintf_vma
+#if (BFD_DEFAULT_TARGET_SIZE > 32)
 #define sprintf_vma(s,x) sprintf (s, "%016" BFD_VMA_FMT "x", x)
 #define fprintf_vma(f,x) fprintf (f, "%016" BFD_VMA_FMT "x", x)
+#else
+#define fprintf_vma(s,x) fprintf (s, "%08" BFD_VMA_FMT "x", x)
+#define sprintf_vma(s,x) sprintf (s, "%08" BFD_VMA_FMT "x", x)
+#endif
 #endif
 
 #else /* not BFD64  */

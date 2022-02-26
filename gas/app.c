@@ -1233,7 +1233,7 @@ do_scrub_chars (int (*get) (char *, int), char *tostart, int tolen)
 	      break;
 	    }
 
-#ifdef TC_D10V
+#if defined (TC_D10V) || defined (TC_HEXAGON)
 	  /* All insns end in a char for which LEX_IS_SYMBOL_COMPONENT is true.
 	     Trap is the only short insn that has a first operand that is
 	     neither register nor label.
@@ -1245,7 +1245,17 @@ do_scrub_chars (int (*get) (char *, int), char *tostart, int tolen)
 	  /* An alternative approach would be to reset the state to 1 when
 	     we see '||', '<'- or '->', but that seems to be overkill.  */
 	  if (state == 10)
-	    PUT (' ');
+	    {
+	      if (to + 1 >= toend)
+		{
+		  /* If we're near the end of the buffer, save the
+		     character for the next time round.  Otherwise
+		     we'll lose our state.  */
+		  UNGET (ch);
+		  goto tofull;
+		}
+	      PUT (' ');
+	    }
 #endif
 	  /* We have a line comment character which is not at the
 	     start of a line.  If this is also a normal comment

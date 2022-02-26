@@ -58,8 +58,13 @@ static void order_and_dump_functions_by_arcs
 extern void bsd_callg_blurb (FILE * fp);
 extern void fsf_callg_blurb (FILE * fp);
 
+extern char hist_dimension[16];
 double print_time = 0.0;
 
+static double child_max;
+static int self_wid;
+static int child_wid;
+static int prec;
 
 static void
 print_header ()
@@ -81,8 +86,8 @@ print_header ()
 	  (long) hist_scale * (long) sizeof (UNIT));
 
   if (print_time > 0.0)
-    printf (_(" for %.2f%% of %.2f seconds\n\n"),
-	    100.0 / print_time, print_time / hz);
+    printf (_(" for %.2f%% of %.2f %s\n\n"),
+	    100.0 / print_time, print_time / hz, hist_dimension);
   else
     {
       printf (_(" no time propagated\n\n"));
@@ -105,10 +110,10 @@ print_header ()
 	      "", "", "", "", _("called"), _("total"), _("children"));
       printf ("\n");
     }
+  else if (child_max / hz >= 100000.0)
+    printf (_("index %% time       self     children    called     name\n"));
   else
-    {
-      printf (_("index %% time    self  children    called     name\n"));
-    }
+    printf (_("index %% time    self  children    called     name\n"));
 }
 
 /* Print a cycle header.  */
@@ -119,12 +124,11 @@ print_cycle (Sym *cyc)
   char buf[BUFSIZ];
 
   sprintf (buf, "[%d]", cyc->cg.index);
-  printf (bsd_style_output
-	  ? "%-6.6s %5.1f %7.2f %11.2f %7lu"
-	  : "%-6.6s %5.1f %7.2f %7.2f %7lu", buf,
+  printf ("%-6.6s %5.1f %*.*f %*.*f %7lu", buf,
 	  100 * (cyc->cg.prop.self + cyc->cg.prop.child) / print_time,
-	  cyc->cg.prop.self / hz, cyc->cg.prop.child / hz, cyc->ncalls);
-
+	  self_wid, prec, cyc->cg.prop.self / hz,
+	  child_wid, prec, cyc->cg.prop.child / hz,
+	  cyc->ncalls);
   if (cyc->cg.self_calls != 0)
     printf ("+%-7lu", cyc->cg.self_calls);
   else
@@ -197,10 +201,10 @@ print_members (Sym *cyc)
 
   for (member = cyc->cg.cyc.next; member; member = member->cg.cyc.next)
     {
-      printf (bsd_style_output
-	      ? "%6.6s %5.5s %7.2f %11.2f %7lu"
-	      : "%6.6s %5.5s %7.2f %7.2f %7lu",
-	      "", "", member->cg.prop.self / hz, member->cg.prop.child / hz,
+      printf ("%6.6s %5.5s %*.*f %*.*f %7lu",
+	      "", "",
+	      self_wid, prec, member->cg.prop.self / hz,
+	      child_wid, prec, member->cg.prop.child / hz,
 	      member->ncalls);
 
       if (member->cg.self_calls != 0)
@@ -355,10 +359,11 @@ print_parents (Sym *child)
 
   if (!child->cg.parents)
     {
-      printf (bsd_style_output
-	      ? _("%6.6s %5.5s %7.7s %11.11s %7.7s %7.7s     <spontaneous>\n")
-	      : _("%6.6s %5.5s %7.7s %7.7s %7.7s %7.7s     <spontaneous>\n"),
-	      "", "", "", "", "", "");
+      printf (_("%6.6s %5.5s %*.*s %*.*s %7.7s %7.7s     <spontaneous>\n"),
+	      "", "",
+	      self_wid, self_wid, "",
+	      child_wid, child_wid, "",
+	      "", "");
       return;
     }
 
@@ -370,23 +375,22 @@ print_parents (Sym *child)
       if (child == parent || (child->cg.cyc.num != 0
 			      && parent->cg.cyc.num == child->cg.cyc.num))
 	{
-	  /* Selfcall or call among siblings.  */
-	  printf (bsd_style_output
-		  ? "%6.6s %5.5s %7.7s %11.11s %7lu %7.7s     "
-		  : "%6.6s %5.5s %7.7s %7.7s %7lu %7.7s     ",
-		  "", "", "", "",
+	  /* Selfcall or call among siblings. */
+	  printf ("%6.6s %5.5s %*.*s %*.*s %7lu %7.7s     ",
+		  "", "",
+		  self_wid, self_wid, "",
+		  child_wid, child_wid, "",
 		  arc->count, "");
 	  print_name (parent);
 	  printf ("\n");
 	}
       else
 	{
-	  /* Regular parent of child.  */
-	  printf (bsd_style_output
-		  ? "%6.6s %5.5s %7.2f %11.2f %7lu/%-7lu     "
-		  : "%6.6s %5.5s %7.2f %7.2f %7lu/%-7lu     ",
+	  /* Regular parent of child. */
+	  printf ("%6.6s %5.5s %*.*f %*.*f %7lu/%-7lu     ",
 		  "", "",
-		  arc->time / hz, arc->child_time / hz,
+		  self_wid, prec, arc->time / hz,
+		  child_wid, prec, arc->child_time / hz,
 		  arc->count, cycle_head->ncalls);
 	  print_name (parent);
 	  printf ("\n");
@@ -443,22 +447,22 @@ print_children (Sym *parent)
       if (child == parent || (child->cg.cyc.num != 0
 			      && child->cg.cyc.num == parent->cg.cyc.num))
 	{
-	  /* Self call or call to sibling.  */
-	  printf (bsd_style_output
-		  ? "%6.6s %5.5s %7.7s %11.11s %7lu %7.7s     "
-		  : "%6.6s %5.5s %7.7s %7.7s %7lu %7.7s     ",
-		  "", "", "", "", arc->count, "");
+	  /* Self call or call to sibling. */
+	  printf ("%6.6s %5.5s %*.*s %*.*s %7lu %7.7s     ",
+		  "", "",
+		  self_wid, self_wid, "",
+		  child_wid, child_wid, "",
+		  arc->count, "");
 	  print_name (child);
 	  printf ("\n");
 	}
       else
 	{
-	  /* Regular child of parent.  */
-	  printf (bsd_style_output
-		  ? "%6.6s %5.5s %7.2f %11.2f %7lu/%-7lu     "
-		  : "%6.6s %5.5s %7.2f %7.2f %7lu/%-7lu     ",
+	  /* Regular child of parent. */
+	  printf ("%6.6s %5.5s %*.*f %*.*f %7lu/%-7lu     ",
 		  "", "",
-		  arc->time / hz, arc->child_time / hz,
+		  self_wid, prec, arc->time / hz,
+		  child_wid, prec, arc->child_time / hz,
 		  arc->count, child->cg.cyc.head->ncalls);
 	  print_name (child);
 	  printf ("\n");
@@ -473,25 +477,21 @@ print_line (Sym *np)
   char buf[BUFSIZ];
 
   sprintf (buf, "[%d]", np->cg.index);
-  printf (bsd_style_output
-	  ? "%-6.6s %5.1f %7.2f %11.2f"
-	  : "%-6.6s %5.1f %7.2f %7.2f", buf,
+  printf ("%-6.6s %5.1f %*.*f %*.*f", buf,
 	  100 * (np->cg.prop.self + np->cg.prop.child) / print_time,
-	  np->cg.prop.self / hz, np->cg.prop.child / hz);
-
+	  self_wid, prec, np->cg.prop.self / hz,
+	  child_wid, prec, np->cg.prop.child / hz);
   if ((np->ncalls + np->cg.self_calls) != 0)
     {
       printf (" %7lu", np->ncalls);
 
       if (np->cg.self_calls != 0)
-	  printf ("+%-7lu ", np->cg.self_calls);
+	printf ("+%-7lu ", np->cg.self_calls);
       else
-	  printf (" %7.7s ", "");
+	printf (" %7.7s ", "");
     }
   else
-    {
-      printf (" %7.7s %7.7s ", "", "");
-    }
+    printf (" %7.7s %7.7s ", "", "");
 
   print_name (np);
   printf ("\n");
@@ -508,6 +508,20 @@ cg_print (Sym ** timesortsym)
 
   if (print_descriptions && bsd_style_output)
     bsd_callg_blurb (stdout);
+
+  child_max = 0.0;
+  for (sym_index = 0; sym_index < symtab.len; sym_index++)
+    {
+      Sym *sym = &symtab.base[sym_index];
+      if (sym->cg.prop.child > child_max)
+	child_max = sym->cg.prop.child;
+    }
+  if (bsd_style_output)
+    self_wid = 7, child_wid = 11, prec = 2;
+  else if (child_max / hz >= 100000.0)
+    self_wid = 10, child_wid = 10, prec = 0;
+  else
+    self_wid = 7, child_wid = 7, prec = 2;
 
   print_header ();
 

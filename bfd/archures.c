@@ -446,6 +446,13 @@ DESCRIPTION
 .  bfd_arch_tilegx, {* Tilera TILE-Gx *}
 .#define bfd_mach_tilepro   1
 .#define bfd_mach_tilegx    1
+.  bfd_arch_hexagon,    {* Qualcomm Hexagon *}
+.#define bfd_mach_hexagon        1
+.#define bfd_mach_hexagon_v2     2
+.#define bfd_mach_hexagon_v3     3
+.#define bfd_mach_hexagon_v4     4
+.#define bfd_mach_hexagon_v5     5
+.#define bfd_mach_hexagon_v55    6
 .  bfd_arch_last
 .  };
 */
@@ -500,6 +507,7 @@ extern const bfd_arch_info_type bfd_fr30_arch;
 extern const bfd_arch_info_type bfd_frv_arch;
 extern const bfd_arch_info_type bfd_h8300_arch;
 extern const bfd_arch_info_type bfd_h8500_arch;
+extern const bfd_arch_info_type bfd_hexagon_arch;
 extern const bfd_arch_info_type bfd_hppa_arch;
 extern const bfd_arch_info_type bfd_i370_arch;
 extern const bfd_arch_info_type bfd_i386_arch;
@@ -580,6 +588,7 @@ static const bfd_arch_info_type * const bfd_archures_list[] =
     &bfd_frv_arch,
     &bfd_h8300_arch,
     &bfd_h8500_arch,
+    &bfd_hexagon_arch,
     &bfd_hppa_arch,
     &bfd_i370_arch,
     &bfd_i386_arch,

@@ -36,6 +36,7 @@
 @set D10V
 @set D30V
 @set H8/300
+@set HEXAGON
 @set HPPA
 @set I370
 @set I80386

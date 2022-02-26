@@ -3921,8 +3921,8 @@ _bfd_elf_map_sections_to_segments (bfd *abfd, struct bfd_link_info *info)
 		 file, then there is no other reason for a new segment.  */
 	      new_segment = FALSE;
 	    }
-	  else if (! writable
-		   && (hdr->flags & SEC_READONLY) == 0
+	  else if ((! writable && (hdr->flags & SEC_READONLY) == 0
+		    || writable && (hdr->flags & SEC_READONLY) != 0)
 		   && (((last_hdr->lma + last_size - 1) & -maxpagesize)
 		       != (hdr->lma & -maxpagesize)))
 	    {
@@ -5593,6 +5593,41 @@ rewrite_elf_program_header (bfd *ibfd, bfd *obfd)
       if (segment->p_type == PT_NULL)
 	continue;
 
+      if (segment->p_type == PT_DYNAMIC)
+	{
+	  asection *dynsec, *odynsec;
+
+	  dynsec = bfd_get_section_by_name (ibfd, ".dynamic");
+	  BFD_ASSERT (dynsec != NULL);
+
+	  odynsec = dynsec->output_section;
+	  BFD_ASSERT (odynsec != NULL);
+
+	  /* Allocate a segment map.  */
+	  amt = sizeof (struct elf_segment_map);
+	  map = (struct elf_segment_map *) bfd_zalloc (obfd, amt);
+	  if (map == NULL)
+	    return FALSE;
+
+	  /* Initialise the map entry.  */
+	  map->next = NULL;
+	  map->p_type = segment->p_type;
+	  map->p_flags = segment->p_flags;
+	  map->p_flags_valid = 1;
+	  map->count = 1;
+	  map->sections[0] = odynsec;
+	  map->p_paddr = odynsec->lma;
+	  map->p_paddr_valid = p_paddr_valid;
+	  map->includes_filehdr = FALSE;
+	  map->includes_phdrs = 0;
+
+	  /* Add this entry to the map.  */
+	  *pointer_to_map = map;
+	  pointer_to_map = &map->next;
+
+	  continue;
+	}
+
       first_section = NULL;
       /* Compute how many sections might be placed into this segment.  */
       for (section = ibfd->sections, section_count = 0;
@@ -5782,7 +5817,7 @@ rewrite_elf_program_header (bfd *ibfd, bfd *obfd)
 	 if necessary.  */
       if (isec == section_count)
 	{
-	  /* All of the sections fitted within the segment as currently
+	  /* All of the sections fit within the segment as currently
 	     specified.  This is the default case.  Add the segment to
 	     the list of built segments and carry on to process the next
 	     program header in the input BFD.  */
@@ -5809,12 +5844,12 @@ rewrite_elf_program_header (bfd *ibfd, bfd *obfd)
 	    {
 	      /* At least one section fits inside the current segment.
 		 Keep it, but modify its physical address to match the
-		 LMA of the first section that fitted.  */
+		 LMA of the first section that fit.  */
 	      map->p_paddr = matching_lma;
 	    }
 	  else
 	    {
-	      /* None of the sections fitted inside the current segment.
+	      /* None of the sections fit inside the current segment.
 		 Change the current segment's physical address to match
 		 the LMA of the first section.  */
 	      map->p_paddr = suggested_lma;
@@ -5944,7 +5979,7 @@ rewrite_elf_program_header (bfd *ibfd, bfd *obfd)
 		 and carry on looping.  */
 	      amt = sizeof (struct elf_segment_map);
 	      amt += ((bfd_size_type) section_count - 1) * sizeof (asection *);
-	      map = (struct elf_segment_map *) bfd_alloc (obfd, amt);
+	      map = (struct elf_segment_map *) bfd_zalloc (obfd, amt);
 	      if (map == NULL)
 		{
 		  free (sections);

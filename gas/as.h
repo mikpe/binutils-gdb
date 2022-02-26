@@ -625,4 +625,6 @@ flag_size_check;
  #error "Octets per byte conflicts with its power-of-two definition!"
 #endif
 
+#define LISTING_MAX 1024
+
 #endif /* GAS */

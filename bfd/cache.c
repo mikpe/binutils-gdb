@@ -125,6 +125,13 @@ bfd_cache_delete (bfd *abfd)
 
   if (fclose ((FILE *) abfd->iostream) == 0)
     ret = TRUE;
+  /* ClearCase has an entertaining bug where close will fail and set
+     errno to EROFS when applied to any file in a read-only view, even
+     if the file was opened for reading.  Detect this situation and
+     ignore the error.  */
+  else if (errno == EROFS && (abfd->direction == no_direction
+			      || abfd->direction == read_direction))
+    ret = TRUE;
   else
     {
       ret = FALSE;

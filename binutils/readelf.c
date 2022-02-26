@@ -106,6 +106,7 @@
 #include "elf/fr30.h"
 #include "elf/frv.h"
 #include "elf/h8.h"
+#include "elf/hexagon.h"
 #include "elf/hppa.h"
 #include "elf/i386.h"
 #include "elf/i370.h"
@@ -569,6 +570,7 @@ guess_is_rela (unsigned int e_machine)
     case EM_H8S:
     case EM_H8_300:
     case EM_H8_300H:
+    case EM_HEXAGON:
     case EM_IA_64:
     case EM_IP2K:
     case EM_IP2K_OLD:
@@ -1233,6 +1235,10 @@ dump_relocations (FILE * file,
 	case EM_TILEPRO:
 	  rtype = elf_tilepro_reloc_type (type);
 	  break;
+
+	case EM_HEXAGON:
+	  rtype = elf_hexagon_reloc_type (type);
+	  break;
 	}
 
       if (rtype == NULL)
@@ -1585,6 +1591,18 @@ get_ia64_dynamic_type (unsigned long type)
 }
 
 static const char *
+get_hexagon_dynamic_type (unsigned long type)
+{
+  switch (type)
+    {
+    case DT_HEX_SYMSZ: return "HEX_SYMSZ";
+    case DT_HEX_VER:   return "HEX_VER";
+    default:
+      return NULL;
+    }
+}
+
+static const char *
 get_alpha_dynamic_type (unsigned long type)
 {
   switch (type)
@@ -1732,6 +1750,9 @@ get_dynamic_type (unsigned long type)
 	    case EM_IA_64:
 	      result = get_ia64_dynamic_type (type);
 	      break;
+            case EM_HEXAGON:
+              result = get_hexagon_dynamic_type (type);
+              break;
 	    case EM_ALPHA:
 	      result = get_alpha_dynamic_type (type);
 	      break;
@@ -1957,7 +1978,6 @@ get_machine_name (unsigned e_machine)
     case EM_CYPRESS_M8C:	return "Cypress M8C microprocessor";
     case EM_R32C:		return "Renesas R32C series microprocessors";
     case EM_TRIMEDIA:		return "NXP Semiconductors TriMedia architecture family";
-    case EM_QDSP6:		return "QUALCOMM DSP6 Processor";
     case EM_8051:		return "Intel 8051 and variants";
     case EM_STXP7X:		return "STMicroelectronics STxP7x family";
     case EM_NDS32:		return "Andes Technology compact code size embedded RISC processor family";
@@ -1983,6 +2003,7 @@ get_machine_name (unsigned e_machine)
     case EM_TILEPRO:		return "Tilera TILEPro multicore architecture family";
     case EM_TILEGX:		return "Tilera TILE-Gx multicore architecture family";
     case EM_CUDA:		return "NVIDIA CUDA architecture";
+    case EM_HEXAGON:		return "Qualcomm Hexagon";
     default:
       snprintf (buff, sizeof (buff), _("<unknown>: 0x%x"), e_machine);
       return buff;
@@ -2479,6 +2500,11 @@ get_machine_flags (unsigned e_flags, unsigned e_machine)
 	    default: strcat (buf, _(", unknown ISA")); break;
 	    }
 
+	  if (e_flags & EF_SH_PIC)
+	    strcat (buf, ", pic");
+
+	  if (e_flags & EF_SH_FDPIC)
+	    strcat (buf, ", fdpic");
 	  break;
 
 	case EM_SPARCV9:
@@ -2595,14 +2621,30 @@ get_machine_flags (unsigned e_flags, unsigned e_machine)
 	    strcat (buf, ", 64-bit doubles");
 	  if (e_flags & E_FLAG_RX_DSP)
 	    strcat (buf, ", dsp");
+	  break;
 
 	case EM_S390:
 	  if (e_flags & EF_S390_HIGH_GPRS)
 	    strcat (buf, ", highgprs");
+	  break;
 
 	case EM_TI_C6000:
 	  if ((e_flags & EF_C6000_REL))
 	    strcat (buf, ", relocatable module");
+	  break;
+
+        case EM_HEXAGON:
+          switch (EF_HEX_MACH_VER (e_flags))
+            {
+	      case EF_HEX_MACH_V1: strcat (buf, ", V1"); break;
+	      case EF_HEX_MACH_V2: strcat (buf, ", V2"); break;
+	      case EF_HEX_MACH_V3: strcat (buf, ", V3"); break;
+	      case EF_HEX_MACH_V4: strcat (buf, ", V4"); break;
+	      case EF_HEX_MACH_V5: strcat (buf, ", V5"); break;
+	      case EF_HEX_MACH_V55: strcat (buf, ", V55"); break;
+            }
+          break;
+
 	}
     }
 
@@ -2767,6 +2809,19 @@ get_tic6x_segment_type (unsigned long type)
 }
 
 static const char *
+get_hexagon_segment_type (unsigned long type)
+{
+  switch (type)
+    {
+      /* PT_HEX_EBI, as the default memory type, is the same as PT_LOAD. */
+      case PT_HEX_SMI:       return "HEX_SMI";
+      case PT_HEX_TCM:       return "HEX_TCM";
+    }
+
+  return NULL;
+}
+
+static const char *
 get_segment_type (unsigned long p_type)
 {
   static char buff[32];
@@ -2809,6 +2864,9 @@ get_segment_type (unsigned long p_type)
 	      break;
 	    case EM_TI_C6000:
 	      result = get_tic6x_segment_type (p_type);
+	      break;
+	    case EM_HEXAGON:
+	      result = get_hexagon_segment_type (p_type);
 	      break;
 	    default:
 	      result = NULL;
@@ -3891,6 +3949,7 @@ process_program_headers (FILE * file)
 		    program_interpreter);
 	    }
 	  break;
+
 	}
 
       if (do_segments)
@@ -7346,6 +7405,27 @@ dynamic_section_ia64_val (Elf_Internal_Dyn * entry)
   putchar ('\n');
 }
 
+static void
+dynamic_section_hexagon_val (Elf_Internal_Dyn * entry)
+{
+  switch (entry->d_tag)
+    {
+    case DT_HEX_SYMSZ:
+      print_vma (entry->d_un.d_ptr, UNSIGNED);
+      printf (" (bytes)");
+      break;
+
+    case DT_HEX_VER:
+      print_vma (entry->d_un.d_ptr, UNSIGNED);
+      break;
+
+    default:
+      print_vma (entry->d_un.d_ptr, PREFIX_HEX);
+      break;
+    }
+  putchar ('\n');
+}
+
 static int
 get_32bit_dynamic_section (FILE * file)
 {
@@ -8027,6 +8107,9 @@ process_dynamic_section (FILE * file)
 		case EM_IA_64:
 		  dynamic_section_ia64_val (entry);
 		  break;
+                case EM_HEXAGON:
+                  dynamic_section_hexagon_val (entry);
+                  break;
 		default:
 		  print_vma (entry->d_un.d_val, PREFIX_HEX);
 		  putchar ('\n');
@@ -8691,6 +8774,8 @@ get_mips_symbol_other (unsigned int other)
       return "MIPS PIC";
     case STO_MICROMIPS:
       return "MICROMIPS";
+    case STO_MICROMIPS | STO_MIPS_PLT:
+      return "MICROMIPS, MIPS PLT";
     case STO_MICROMIPS | STO_MIPS_PIC:
       return "MICROMIPS, MIPS PIC";
     case STO_MIPS16:
@@ -9695,6 +9780,8 @@ is_32bit_abs_reloc (unsigned int reloc_type)
     case EM_H8_300:
     case EM_H8_300H:
       return reloc_type == 1; /* R_H8_DIR32.  */
+    case EM_HEXAGON:
+      return reloc_type == 6; /* R_HEX_32.  */
     case EM_IA_64:
       return reloc_type == 0x65; /* R_IA64_SECREL32LSB.  */
     case EM_IP2K_OLD:

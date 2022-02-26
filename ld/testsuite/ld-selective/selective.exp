@@ -59,7 +59,7 @@ set seltests {
     {A::foo() B::foo() dropme1() dropme2()} {*-*-*}}
 }
 
-set cflags "-w -O -ffunction-sections -fdata-sections"
+set cflags "-w -O -fno-unwind-tables -ffunction-sections -fdata-sections"
 set cxxflags "-fno-exceptions -fno-rtti"
 set ldflags "--gc-sections -Bstatic"
 

@@ -121,6 +121,10 @@ for this_target in $target $canon_targets ; do
 
     generic_target=${cpu_type}-${target_vendor}-${target_os}
     case ${generic_target} in
+      hexagon*-linux*)
+	AC_DEFINE(TARGET_USE_CFIPOP, 1, [Enable CFI if target is Linux.])
+	;;
+
       i386-*-sco3.2v5*)
 	if test ${this_target} = $target; then
 	  AC_DEFINE(SCO_ELF, 1, [Define if defaulting to ELF on SCO 5.])

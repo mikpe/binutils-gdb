@@ -44,18 +44,24 @@ static int cmp_time (const PTR, const PTR);
 
 /* Declarations of automatically generated functions to output blurbs.  */
 extern void flat_blurb (FILE * fp);
-
+#ifdef HEXAGON_SIM
+extern void hexagon_blurb (FILE *fp);
+#endif
+  
 static histogram *find_histogram (bfd_vma lowpc, bfd_vma highpc);
 static histogram *find_histogram_for_pc (bfd_vma pc);
 
 histogram * histograms;
 unsigned num_histograms;
 double hist_scale;
-static char hist_dimension[16] = "seconds";
-static char hist_dimension_abbrev = 's';
+char hist_dimension[16] = "hilleks";
+char hist_dimension_abbrev = 's';
 
 static double accum_time;	/* Accumulated time so far for print_line(). */
 static double total_time;	/* Total time for all routines.  */
+
+typedef enum { UNKNOWN_TYPE=0, IS_ICMISS, IS_DCMISS, IS_CYCLES, IS_L2CMISS, IS_BACC } typeofgmon;
+typeofgmon gmon_type = UNKNOWN_TYPE;
 
 /* Table of SI prefixes for powers of 10 (used to automatically
    scale some of the values in the flat profile).  */
@@ -88,9 +94,9 @@ SItab[] =
    that the new histogram is compatible with already-set values
    of those variables and emits an error if that's not so.  */
 static void
-read_histogram_header (histogram *record, 
+read_histogram_header (histogram *record,
 		       FILE *ifp, const char *filename,
-		       int first)
+		       int first, float *scale)
 {
   unsigned int profrate;
   char n_hist_dimension[15];
@@ -110,28 +116,104 @@ read_histogram_header (histogram *record,
       done (1);
     }
 
-  n_hist_scale = (double)((record->highpc - record->lowpc) / sizeof (UNIT)) 
+  n_hist_scale = (double)((record->highpc - record->lowpc) / sizeof (UNIT))
     / record->num_bins;
+
+  if (!strncmp(n_hist_dimension, "  i-cache miss", 14))
+    {
+      if((gmon_type == UNKNOWN_TYPE) || (gmon_type == IS_ICMISS))
+        {
+          *scale = 1.0f;
+          strcpy(n_hist_dimension, _("I$miss"));
+          n_hist_dimension_abbrev = 'm';
+	  gmon_type = IS_ICMISS;
+	}
+      else
+        {
+	  fprintf(stderr, _("%s: I$Miss cannot be mixed with other gmon file types\n"), whoami);
+	  done(1);
+	}
+    }
+  else if (!strncmp(n_hist_dimension, "  d-cache miss", 14))
+    {
+      if ((gmon_type == UNKNOWN_TYPE) || (gmon_type == IS_DCMISS))
+        {
+          *scale = 1.0;
+          strcpy(n_hist_dimension, _("D$miss"));
+          n_hist_dimension_abbrev = 'm';
+	  gmon_type = IS_DCMISS;
+	}
+      else
+        {
+	  fprintf(stderr, _("%s: D$Miss cannot be mixed with other gmon file types\n"), whoami);
+	  done(1);
+	}
+    }
+  else if (!strncmp(n_hist_dimension, "  bus accesses", 14))
+    {
+      if ((gmon_type == UNKNOWN_TYPE) || (gmon_type == IS_BACC))
+        {
+          *scale = 1.0;
+          strcpy(n_hist_dimension, _("BusAcc"));
+          n_hist_dimension_abbrev = 'm';
+          gmon_type = IS_BACC;
+        }
+      else
+        {
+          fprintf(stderr, _("%s: BusAcc cannot be mixed with other gmon file types\n"), whoami);
+          done(1);
+        }
+    }
+  else if (!strncmp(n_hist_dimension, "  l2cache miss", 14))
+    {
+      if ((gmon_type == UNKNOWN_TYPE) || (gmon_type == IS_L2CMISS))
+        {
+          *scale = 1.0;
+          strcpy(n_hist_dimension, _("L2$miss"));
+          n_hist_dimension_abbrev = 'm';
+	  gmon_type = IS_L2CMISS;
+	}
+      else
+        {
+	  fprintf(stderr, _("%s: L2$Miss cannot be mixed with other gmon file types\n"), whoami);
+	  done(1);
+	}
+    }
+  else
+    {
+      if ((gmon_type == UNKNOWN_TYPE) || (gmon_type == IS_CYCLES))
+        {
+          sscanf (n_hist_dimension, _("%f"), scale);
+          strcpy (n_hist_dimension, _("cycle(s)"));
+          n_hist_dimension_abbrev = 'c';
+	  gmon_type = IS_CYCLES;
+	}
+      else
+        {
+	  fprintf(stderr, _("%s: Cycle counts cannot be mixed with other gmon file types\n"), whoami);
+	  done(1);
+	}
+    }
 
   if (first)
     {
-      /* We don't try to veryfy profrate is the same for all histogram
+      /* We don't try to verify profrate is the same for all histogram
 	 records.  If we have two histogram records for the same
 	 address range and profiling samples is done as often
 	 as possible as opposed on timer, then the actual profrate will
 	 be slightly different.  Most of the time the difference does not
 	 matter and insisting that profiling rate is exactly the same
 	 will only create inconvenient.  */
-      hz = profrate;
+      hz_int = profrate;
       memcpy (hist_dimension, n_hist_dimension, 15);
       hist_dimension_abbrev = n_hist_dimension_abbrev;
-      hist_scale = n_hist_scale;      
+      hist_scale = n_hist_scale;
     }
   else
     {
       if (strncmp (n_hist_dimension, hist_dimension, 15) != 0)
 	{
-	  fprintf (stderr, 
+	  fprintf (stderr,
 		   _("%s: dimension unit changed between histogram records\n"
 		     "%s: from '%s'\n"
 		     "%s: to '%s'\n"),
@@ -141,12 +223,12 @@ read_histogram_header (histogram *record,
 
       if (n_hist_dimension_abbrev != hist_dimension_abbrev)
 	{
-	  fprintf (stderr, 
+	  fprintf (stderr,
 		   _("%s: dimension abbreviation changed between histogram records\n"
 		     "%s: from '%c'\n"
 		     "%s: to '%c'\n"),
 		   whoami, whoami, hist_dimension_abbrev, whoami, n_hist_dimension_abbrev);
-	  done (1);	  
+	  done (1);
 	}
 
       /* The only reason we require the same scale for histograms is that
@@ -155,13 +237,51 @@ read_histogram_header (histogram *record,
 	 things for different functions.  */
       if (fabs (hist_scale - n_hist_scale) > 0.000001)
 	{
-	  fprintf (stderr, 
+	  fprintf (stderr,
 		   _("%s: different scales in histogram records"),
 		   whoami);
-	  done (1);      
+	  done (1);
 	}
     }
 }
+
+/* Read in version 2 compressed data from the file 'fd'. */
+
+unsigned long long
+readCompressed (FILE *fd)
+{
+  unsigned long long val = 0;
+  unsigned char c;
+  unsigned int count;
+  int retval, i;
+
+  retval = fread(&c, 1, 1, fd);   // Read flag byte
+  if(retval == 0)
+  {
+    fprintf(stderr, "Error reading compressed value\n");
+    return (unsigned long long) ~0;
+  }
+  if(!(c & 0x80))         // Short count
+  {
+    return (unsigned long long) c;
+  }
+
+  count = c & ~0x80;
+
+  for(i = 0; i < (int) count; i++)
+  {
+    retval = fread(&c, 1, 1, fd);
+    if(retval == 0)
+    {
+      fprintf(stderr, "Error reading compressed value\n");
+      return (unsigned long long) ~0;
+    }
+    val |= ((unsigned long long) c) << (i * 8);
+  }
+
+  return val;
+}
+
 
 /* Read the histogram from file IFP.  FILENAME is the name of IFP and
    is provided for formatting error messages only.  */
@@ -169,14 +289,19 @@ read_histogram_header (histogram *record,
 void
 hist_read_rec (FILE * ifp, const char *filename)
 {
-  bfd_vma lowpc, highpc;
+  bfd_vma lowpc, highpc, cur_pc;
   histogram n_record;
   histogram *record, *existing_record;
   unsigned i;
+  float scale;
+  int bin_scale;
+  unsigned int offset;
 
   /* 1. Read the header and see if there's existing record for the
      same address range and that there are no overlapping records.  */
-  read_histogram_header (&n_record, ifp, filename, num_histograms == 0);
+  read_histogram_header (&n_record, ifp, filename, num_histograms == 0, &scale);
+
+  bin_scale = (n_record.highpc - n_record.lowpc) / n_record.num_bins;
 
   existing_record = find_histogram (n_record.lowpc, n_record.highpc);
   if (existing_record)
@@ -192,24 +317,114 @@ hist_read_rec (FILE * ifp, const char *filename)
       hist_clip_symbol_address (&lowpc, &highpc);
       if (lowpc != highpc)
 	{
-	  fprintf (stderr, 
+    	    if (gmon_file_version == 1)  /* gnu-style gmon.out format */
+	    {
+		/* If this record overlaps, but does not completely match 
+		   an existing record, it's an error.  */
+		fprintf (stderr, 
 		   _("%s: overlapping histogram records\n"),
 		   whoami);
-	  done (1);      
+		done (1);      
+	    }
+  	    else /* gmon_file_version == 2 */
+	    {
+	        histogram *new_hist, *this;
+		int count, j;
+		int sz_new_hist = 2 * num_histograms * sizeof(histogram);
+
+		new_hist = xmalloc (sz_new_hist);
+		memset (new_hist, 0, sz_new_hist);
+
+		new_hist[0].lowpc = n_record.lowpc;
+		new_hist[0].highpc = n_record.highpc;
+		count = 1;
+
+		/* Clip the new region with the set of existing histograms
+		   to create a new set of regions that only consist of the
+		   non-overlapped areas of the new region.  This new set
+		   will be added to the existing histograms.  */
+
+		for (i = 0; i < num_histograms; i++)
+		{
+		    for (j = count-1; j >= 0; j--)
+		    {
+		        bfd_vma il = histograms[i].lowpc;
+		        bfd_vma ih = histograms[i].highpc;
+		        bfd_vma jl = new_hist[j].lowpc;
+			bfd_vma jh = new_hist[j].highpc;
+
+			if ((jl < ih) && (jh > il))
+			{
+			    /* The new region overlaps in some way with 
+			       this particular histogram region.
+
+			       To clip out the overlap, start by adjusting
+			       this new region to reflect only the portion 
+			       of the new region that is below the overlap
+			       (if any).  Note that this may eliminate the
+			       region entirely if no portion of the new
+			       region exists below the overlap.  */
+
+			    new_hist[j].highpc = il;
+
+			    if (jh > ih)
+			    {
+			    	/* The new region extends above the overlap.
+				   Create a second region to reflect the
+				   only the portion of the new region
+				   that extends above the overlap.  */
+			        new_hist[count].lowpc = ih;
+			        new_hist[count].highpc = jh;
+				count++;
+			    }
+		        }
+		    }
+		}
+
+		/* Create new histograms that are needed.  */
+
+		for (j = 0; j < count; j++)
+		{
+		    if (new_hist[j].highpc > new_hist[j].lowpc)
+		    {
+          		histograms = (struct histogram *)
+              			xrealloc (histograms,
+				sizeof (histogram) * (num_histograms + 1));
+
+          		this = &histograms[num_histograms];      
+			this->lowpc    = new_hist[j].lowpc;
+			this->highpc   = new_hist[j].highpc;
+			this->num_bins = (this->highpc - this->lowpc)
+								/ bin_scale;
+          		++num_histograms;
+    
+          		this->sample = (int *) xmalloc (this->num_bins 
+					    * sizeof (this->sample[0]));
+          		memset (this->sample, 0,
+				this->num_bins * sizeof (this->sample[0]));
+		    }
+		}
+
+		record = &histograms[0];
+		free (new_hist);
+	    }
 	}
+      else
+        {
 
-      /* This is new record.  Add it to global array and allocate space for
-	 the samples.  */
-      histograms = (struct histogram *)
-          xrealloc (histograms, sizeof (histogram) * (num_histograms + 1));
-      memcpy (histograms + num_histograms,
-	      &n_record, sizeof (histogram));
-      record = &histograms[num_histograms];      
-      ++num_histograms;
-
-      record->sample = (int *) xmalloc (record->num_bins 
-					* sizeof (record->sample[0]));
-      memset (record->sample, 0, record->num_bins * sizeof (record->sample[0]));
+          /* This is new record.  Add it to global array and allocate space for
+	     the samples.  */
+          histograms = (struct histogram *)
+              xrealloc (histograms, sizeof (histogram) * (num_histograms + 1));
+          memcpy (histograms + num_histograms,
+	          &n_record, sizeof (histogram));
+          record = &histograms[num_histograms];      
+          ++num_histograms;
+    
+          record->sample = (int *) xmalloc (record->num_bins 
+					    * sizeof (record->sample[0]));
+          memset (record->sample, 0, record->num_bins * sizeof (record->sample[0]));
+	}
     }
 
   /* 2. We have either a new record (with zeroed histogram data), or an existing
@@ -218,26 +433,56 @@ hist_read_rec (FILE * ifp, const char *filename)
 
   DBG (SAMPLEDEBUG,
        printf ("[hist_read_rec] n_lowpc 0x%lx n_highpc 0x%lx ncnt %u\n",
-	       (unsigned long) record->lowpc, (unsigned long) record->highpc, 
+	       (unsigned long) record->lowpc, (unsigned long) record->highpc,
                record->num_bins));
+
+    cur_pc = n_record.lowpc;
+    offset = (n_record.lowpc - record->lowpc) / bin_scale;
            
-  for (i = 0; i < record->num_bins; ++i)
+    for (i = 0; i < n_record.num_bins; ++i)
     {
-      UNIT count;
-      if (fread (&count[0], sizeof (count), 1, ifp) != 1)
+	if (gmon_file_version == 1)  /* gnu-style gmon.out format */
 	{
-	  fprintf (stderr,
-		  _("%s: %s: unexpected EOF after reading %u of %u samples\n"),
+	    UNIT count;
+
+            if (fread (&count[0], sizeof (count), 1, ifp) != 1)
+	    {
+		fprintf (stderr,
+		   _("%s: %s: unexpected EOF after reading %u of %u samples\n"),
 		   whoami, filename, i, record->num_bins);
-	  done (1);
+		done (1);
+	    }
+            record->sample[i] += bfd_get_16 (core_bfd[0], (bfd_byte *) & count[0]);
 	}
-      record->sample[i] += bfd_get_16 (core_bfd, (bfd_byte *) & count[0]);
-      DBG (SAMPLEDEBUG,
-	   printf ("[hist_read_rec] 0x%lx: %u\n",
-		   (unsigned long) (record->lowpc 
-                                    + i * (record->highpc - record->lowpc) 
-                                    / record->num_bins),
-		   record->sample[i]));
+	else /* gmon_file_version == 2 */
+	{
+	    unsigned long long val = readCompressed(ifp);
+
+	    if (val == (unsigned long long) ~0)
+	    {
+		fprintf (stderr,
+		_("%s: %s: unexpected EOF after reading %d of %d samples\n"),
+		       whoami, filename, i, record->num_bins);
+		done (1);
+	    }
+
+	    if (num_histograms == 1)
+	    {
+                record->sample[i+offset] += val * scale;
+	    }
+	    else
+	    {
+	        record = find_histogram_for_pc (cur_pc);
+                record->sample[(cur_pc - record->lowpc)/bin_scale] += val * scale;
+	        cur_pc += bin_scale;
+	    }
+	}
+        DBG (SAMPLEDEBUG,
+	       printf ("[hist_read_rec] 0x%lx: %u\n",
+		       (unsigned long) (record->lowpc 
+                                        + i * (record->highpc - record->lowpc) 
+                                        / record->num_bins),
+		       record->sample[i]));
     }
 }
 
@@ -261,7 +506,7 @@ hist_write_hist (FILE * ofp, const char *filename)
 	  || gmon_io_write_vma (ofp, record->lowpc)
 	  || gmon_io_write_vma (ofp, record->highpc)
 	  || gmon_io_write_32 (ofp, record->num_bins)
-	  || gmon_io_write_32 (ofp, hz)
+	  || gmon_io_write_32 (ofp, hz_int)
 	  || gmon_io_write (ofp, hist_dimension, 15)
 	  || gmon_io_write (ofp, &hist_dimension_abbrev, 1))
 	{
@@ -271,7 +516,7 @@ hist_write_hist (FILE * ofp, const char *filename)
       
       for (i = 0; i < record->num_bins; ++i)
 	{
-	  bfd_put_16 (core_bfd, (bfd_vma) record->sample[i], (bfd_byte *) &count[0]);
+	  bfd_put_16 (core_bfd[0], (bfd_vma) record->sample[i], (bfd_byte *) &count[0]);
 	  
 	  if (fwrite (&count[0], sizeof (count), 1, ofp) != 1)
 	    {
@@ -486,12 +731,24 @@ print_header (int prefix)
       total_time = 1.0;
     }
 
-  printf ("%5.5s %10.10s %8.8s %8.8s %8.8s %8.8s  %-8.8s\n",
-	  "%  ", _("cumulative"), _("self  "), "", _("self  "), _("total "),
-	  "");
-  printf ("%5.5s %9.9s  %8.8s %8.8s %8.8s %8.8s  %-8.8s\n",
-	  _("time"), hist_dimension, hist_dimension, _("calls"), unit, unit,
-	  _("name"));
+  if (total_time / hz_int >= 100000.0 && ! bsd_style_output)
+    {
+      printf ("%5.5s %13.13s %11.11s %8.8s %8.8s %8.8s  %-8.8s\n",
+	      "%  ", _("cumulative"), _("self  "), "", _("self  "),
+	      _("total "), "");
+      printf ("%5.5s %12.12s  %11.11s %8.8s %8.8s %8.8s  %-8.8s\n",
+	      _("time"), hist_dimension, hist_dimension, _("calls"), unit,
+	      unit, _("name"));
+    }
+  else
+    {
+      printf ("%5.5s %10.10s %8.8s %8.8s %8.8s %8.8s  %-8.8s\n",
+	      "%  ", _("cumulative"), _("self  "), "", _("self  "),
+	      _("total "), "");
+      printf ("%5.5s %9.9s  %8.8s %8.8s %8.8s %8.8s  %-8.8s\n",
+	      _("time"), hist_dimension, hist_dimension, _("calls"), unit,
+	      unit, _("name"));
+    }
 }
 
 
@@ -507,8 +764,12 @@ print_line (Sym *sym, double scale)
     printf ("%5.1f %10.2f %8.2f",
 	    total_time > 0.0 ? 100 * sym->hist.time / total_time : 0.0,
 	    accum_time / hz, sym->hist.time / hz);
+  else if (total_time / hz >= 100000.0)
+    printf ("%6.2f %12.0f %11.0f",
+	    100 * sym->hist.time / total_time,
+	    accum_time / hz, sym->hist.time / hz);
   else
-    printf ("%6.2f %9.2f %8.2f",
+    printf ("%6.2f %9.0f %8.0f",
 	    total_time > 0.0 ? 100 * sym->hist.time / total_time : 0.0,
 	    accum_time / hz, sym->hist.time / hz);
 
@@ -580,7 +841,11 @@ hist_print ()
       if (print_descriptions)
 	{
 	  printf (_("\n\n\nflat profile:\n"));
+#ifdef HEXAGON_SIM
+	  hexagon_blurb (stdout);
+#else
 	  flat_blurb (stdout);
+#endif
 	}
     }
   else
@@ -612,7 +877,12 @@ hist_print ()
       for (sym_index = 0; sym_index < symtab.len; ++sym_index)
 	{
 	  sym = time_sorted_syms[sym_index];
-
+	  /* Don't let this symbol affect the scaling if it's not going
+	     to be included in the histogram. */
+	  if ((syms[INCL_FLAT].len != 0
+	       && ! sym_lookup (&syms[INCL_FLAT], sym->addr))
+	      || sym_lookup (&syms[EXCL_FLAT], sym->addr))
+	    continue;
 	  if (sym->ncalls != 0)
 	    {
 	      double call_time;
@@ -635,7 +905,7 @@ hist_print ()
 	    {
 	      double scaled_value = SItab[log_scale].scale * top_time;
 
-	      if (scaled_value >= 1.0 && scaled_value < 1000.0) 
+	      if (scaled_value >= 1.0 && scaled_value < 1000.0)
 		break;
 	    }
 	}
@@ -661,7 +931,11 @@ hist_print ()
   free (time_sorted_syms);
 
   if (print_descriptions && !bsd_style_output)
+#ifdef HEXAGON_SIM
+    hexagon_blurb (stdout);
+#else
     flat_blurb (stdout);
+#endif
 }
 
 int
@@ -673,7 +947,7 @@ hist_check_address (unsigned address)
     if (histograms[i].lowpc <= address && address < histograms[i].highpc)
       return 1;
 
-  return 0;        
+  return 0;
 }
 
 #if ! defined(min)
@@ -748,5 +1022,5 @@ find_histogram_for_pc (bfd_vma pc)
       if (histograms[i].lowpc <= pc && pc < histograms[i].highpc)
 	return &histograms[i];
     }
-  return 0;  
+  return 0;
 }

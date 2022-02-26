@@ -5522,17 +5522,23 @@ arm_allocate_glue_section_space (bfd * abfd, bfd_size_type size, const char * na
   asection * s;
   bfd_byte * contents;
 
-  if (size == 0)
+  /* Do not include empty glue sections in the output.  If we are called
+     once with SIZE == 0 and again with SIZE > 0 though, make sure we don't
+     exclude sections that we now need.  */
+  if (abfd != NULL)
     {
-      /* Do not include empty glue sections in the output.  */
-      if (abfd != NULL)
+      s = bfd_get_section_by_name (abfd, name);
+      if (s != NULL)
 	{
-	  s = bfd_get_section_by_name (abfd, name);
-	  if (s != NULL)
+	  if (size == 0)
 	    s->flags |= SEC_EXCLUDE;
+	  else
+	    s->flags &= ~SEC_EXCLUDE;
 	}
-      return;
     }
+  
+  if (size == 0)
+    return;
 
   BFD_ASSERT (abfd != NULL);
 

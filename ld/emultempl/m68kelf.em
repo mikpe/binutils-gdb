@@ -34,10 +34,7 @@ esac
 
 case ${target} in
   *-linux*)
-# Don't use multi-GOT by default due to glibc linker's assumption
-# that GOT pointer points to GOT[0].
-#   got_handling_target_default=GOT_HANDLING_MULTIGOT
-    got_handling_target_default=GOT_HANDLING_SINGLE
+    got_handling_target_default=GOT_HANDLING_MULTIGOT
     ;;
   *)
     got_handling_target_default=GOT_HANDLING_SINGLE

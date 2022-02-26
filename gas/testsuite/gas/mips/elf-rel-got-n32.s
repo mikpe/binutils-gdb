@@ -137,6 +137,7 @@ fn:
 	b	.Lfn2
 
 # Force at least 8 (non-delay-slot) zero bytes, to make 'objdump' print ...
+	.align	2
 	.space	8
 
 	.end	fn
@@ -146,6 +147,11 @@ fn:
 	.type	fn2,@function
 fn2:
 .Lfn2:
+
+# Force at least 8 (non-delay-slot) zero bytes, to make 'objdump' print ...
+	.align	2
+	.space	8
+
 	.end	fn2
 
 	.globl  __start

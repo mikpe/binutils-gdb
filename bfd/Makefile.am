@@ -87,6 +87,7 @@ ALL_MACHINES = \
 	cpu-frv.lo \
 	cpu-h8300.lo \
 	cpu-h8500.lo \
+	cpu-hexagon.lo \
 	cpu-hppa.lo \
 	cpu-i370.lo \
 	cpu-i386.lo \
@@ -162,6 +163,7 @@ ALL_MACHINES_CFILES = \
 	cpu-frv.c \
 	cpu-h8300.c \
 	cpu-h8500.c \
+	cpu-hexagon.c \
 	cpu-hppa.c \
 	cpu-i370.c \
 	cpu-i386.c \
@@ -290,6 +292,7 @@ BFD32_BACKENDS = \
 	elf32-frv.lo \
 	elf32-gen.lo \
 	elf32-h8300.lo \
+	elf32-hexagon.lo \
 	elf32-hppa.lo \
 	elf32-i370.lo \
 	elf32-i386.lo \
@@ -339,6 +342,7 @@ BFD32_BACKENDS = \
 	elfxx-tilegx.lo \
 	epoc-pe-arm.lo \
 	epoc-pei-arm.lo \
+	hexagon-isa.lo \
 	hp300bsd.lo \
 	hp300hpux.lo \
 	i386aout.lo \
@@ -474,6 +478,7 @@ BFD32_BACKENDS_CFILES = \
 	elf32-frv.c \
 	elf32-gen.c \
 	elf32-h8300.c \
+	elf32-hexagon.c \
 	elf32-hppa.c \
 	elf32-i370.c \
 	elf32-i386.c \
@@ -523,6 +528,7 @@ BFD32_BACKENDS_CFILES = \
 	elfxx-tilegx.c \
 	epoc-pe-arm.c \
 	epoc-pei-arm.c \
+	hexagon-isa.c \
 	hp300bsd.c \
 	hp300hpux.c \
 	i386aout.c \

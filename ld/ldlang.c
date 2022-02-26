@@ -3456,6 +3456,18 @@ lang_place_undefineds (void)
 {
   ldlang_undef_chain_list_type *ptr;
 
+  if (link_info.executable && link_info.dynamic_list)
+    {
+      struct bfd_elf_version_expr *e;
+      for (e = link_info.dynamic_list->head.list; e; e = e->next)
+	{
+	  /* If there are no globbing wildcards, create a symbol.  */
+	  size_t len = strcspn (e->pattern, "*?[");
+	  if (e->pattern[len] == '\0')
+	    insert_undefined (e->pattern);
+	}
+    }
+
   for (ptr = ldlang_undef_chain_list_head; ptr != NULL; ptr = ptr->next)
     insert_undefined (ptr->name);
 }

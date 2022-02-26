@@ -22,6 +22,8 @@
 #ifndef corefile_h
 #define corefile_h
 
+#define MAX_NUM_COREFILES 30
+
 struct function_map
 {
   char *         function_name;
@@ -32,16 +34,18 @@ struct function_map
 extern struct function_map * symbol_map;
 extern unsigned int symbol_map_count;
 
-extern bfd * core_bfd;		  /* BFD for core-file.  */
+extern bfd * core_bfd[MAX_NUM_COREFILES];  /* BFD for core-file.  */
 extern asection * core_text_sect; /* Core text section.  */
 extern void * core_text_space;    /* Text space of a.out in core.  */
 extern int offset_to_code;	  /* Offset (in bytes) of code from entry
 				     address of routine.  */
 
-extern void core_init                  (const char *);
+extern void core_init                  (const char *, int);
 extern void core_get_text_space        (bfd *);
-extern void core_create_function_syms  (void);
-extern void core_create_line_syms      (void);
-extern void core_create_syms_from      (const char *);
+extern void core_create_function_syms  (bfd *, int);
+extern void core_create_line_syms      (bfd *, int);
+extern void core_create_syms_from      (const char *, int);
+
+extern int  isObjectFile               (const char *);
 
 #endif /* corefile_h */

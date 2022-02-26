@@ -352,6 +352,22 @@ const bfd_arch_info_type bfd_powerpc_archs[] =
     FALSE, /* not the default */
     powerpc_compatible,
     bfd_default_scan,
+    &bfd_powerpc_archs[19]
+  },
+  /* Freescale changed the name of the e500mc64 after the port was
+     submitted.  Provide a definition for the new name also.  */
+  {
+    64, /* 64 bits in a word */
+    64, /* 64 bits in an address */
+    8,  /* 8 bits in a byte */
+    bfd_arch_powerpc,
+    bfd_mach_ppc_e500mc64,
+    "powerpc",
+    "powerpc:e5500",
+    3,
+    FALSE, /* not the default */
+    powerpc_compatible,
+    bfd_default_scan,
     0
   }
 };

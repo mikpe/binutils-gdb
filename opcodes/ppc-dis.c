@@ -114,6 +114,11 @@ struct ppc_mopt ppc_opts[] = {
 		| PPC_OPCODE_E500MC | PPC_OPCODE_64 | PPC_OPCODE_POWER5
 		| PPC_OPCODE_POWER6 | PPC_OPCODE_POWER7),
     0 },
+  { "e5500",  (PPC_OPCODE_PPC | PPC_OPCODE_BOOKE | PPC_OPCODE_ISEL
+	       | PPC_OPCODE_PMR | PPC_OPCODE_CACHELCK | PPC_OPCODE_RFMCI
+	       | PPC_OPCODE_E500MC | PPC_OPCODE_64 | PPC_OPCODE_POWER5
+	       | PPC_OPCODE_POWER6 | PPC_OPCODE_POWER7),
+    0 },
   { "e500x2",  (PPC_OPCODE_PPC | PPC_OPCODE_BOOKE | PPC_OPCODE_SPE
 		| PPC_OPCODE_ISEL | PPC_OPCODE_EFS | PPC_OPCODE_BRLOCK
 		| PPC_OPCODE_PMR | PPC_OPCODE_CACHELCK | PPC_OPCODE_RFMCI
@@ -121,6 +126,8 @@ struct ppc_mopt ppc_opts[] = {
     0 },
   { "efs",     (PPC_OPCODE_PPC | PPC_OPCODE_EFS),
     0 },
+  { "pmr",     0,
+    PPC_OPCODE_PMR },
   { "power4",  (PPC_OPCODE_PPC | PPC_OPCODE_64 | PPC_OPCODE_POWER4),
     0 },
   { "power5",  (PPC_OPCODE_PPC | PPC_OPCODE_64 | PPC_OPCODE_POWER4
@@ -180,7 +187,8 @@ ppc_parse_cpu (ppc_cpu_t ppc_cpu, const char *arg)
 {
   /* Sticky bits.  */
   ppc_cpu_t retain_flags = ppc_cpu & (PPC_OPCODE_ALTIVEC | PPC_OPCODE_VSX
-				      | PPC_OPCODE_SPE | PPC_OPCODE_ANY);
+				      | PPC_OPCODE_SPE | PPC_OPCODE_ANY
+				      | PPC_OPCODE_PMR);
   unsigned int i;
 
   for (i = 0; i < sizeof (ppc_opts) / sizeof (ppc_opts[0]); i++)
@@ -190,7 +198,8 @@ ppc_parse_cpu (ppc_cpu_t ppc_cpu, const char *arg)
 	  {
 	    retain_flags |= ppc_opts[i].sticky;
 	    if ((ppc_cpu & ~(ppc_cpu_t) (PPC_OPCODE_ALTIVEC | PPC_OPCODE_VSX
-					 | PPC_OPCODE_SPE | PPC_OPCODE_ANY)) != 0)
+					 | PPC_OPCODE_SPE | PPC_OPCODE_ANY
+					 | PPC_OPCODE_PMR)) != 0)
 	      break;
 	  }
 	ppc_cpu = ppc_opts[i].cpu;

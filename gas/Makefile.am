@@ -121,6 +121,7 @@ TARGET_CPU_CFILES = \
 	config/tc-fr30.c \
 	config/tc-frv.c \
 	config/tc-h8300.c \
+ 	config/tc-hexagon.c \
 	config/tc-hppa.c \
 	config/tc-ia64.c \
 	config/tc-i370.c \
@@ -187,6 +188,7 @@ TARGET_CPU_HFILES = \
 	config/tc-fr30.h \
 	config/tc-frv.h \
 	config/tc-h8300.h \
+	config/tc-hexagon.h \
 	config/tc-hppa.h \
 	config/tc-ia64.h \
 	config/tc-i370.h \

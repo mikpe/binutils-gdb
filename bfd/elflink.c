@@ -484,7 +484,8 @@ bfd_elf_link_mark_dynamic_symbol (struct bfd_link_info *info,
 	   || (sym != NULL
 	       && ELF_ST_TYPE (sym->st_info) == STT_OBJECT)))
       || (d != NULL
-	  && h->root.type == bfd_link_hash_new
+	  && (h->root.type == bfd_link_hash_new
+	      || h->root.type == bfd_link_hash_undefined)
 	  && (*d->match) (&d->head, NULL, h->root.root.string)))
     h->dynamic = 1;
 }
@@ -8955,7 +8956,9 @@ elf_link_output_extsym (struct bfd_hash_entry *bh, void *data)
 
   /* If we're stripping it, then it was just a dynamic symbol, and
      there's nothing else to do.  */
-  if (strip || (input_sec->flags & SEC_EXCLUDE) != 0)
+  if (strip
+      || (! finfo->info->relocatable
+          && ((input_sec->flags & SEC_EXCLUDE) != 0)))
     return TRUE;
 
   indx = bfd_get_symcount (finfo->output_bfd);

@@ -5,7 +5,7 @@
 Disassembly of section destsect:
 
 00009000 <[^>]*>:
-    9000:	e7fe      	b.n	9000 <dest>
+    9000:	f7ff bffe 	b.w	9000 <dest>
 
 Disassembly of section .text:
 

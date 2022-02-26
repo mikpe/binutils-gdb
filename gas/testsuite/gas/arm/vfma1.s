@@ -1,6 +1,6 @@
 
 	.eabi_attribute Tag_Advanced_SIMD_arch, 2
-	.eabi_attribute Tag_VFP_arch, 6
+	.eabi_attribute Tag_FP_arch, 6
 	
 	@VMLA
 	.inst 0xee000a00 @ VFP  vmla.f32 s0,s0,s0

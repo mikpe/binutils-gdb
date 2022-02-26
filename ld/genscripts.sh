@@ -420,6 +420,22 @@ if test -n "$GENERATE_AUTO_IMPORT_SCRIPT"; then
   ) | sed -e '/^ *$/d;s/[ 	]*$//' > ldscripts/${EMULATION_NAME}.xa
 fi
 
+case "${target_alias}" in
+  hexagon*-linux*)
+    ;;
+  hexagon*)
+    LD_FLAG=tcm
+    DATA_ALIGNMENT=${DATA_ALIGNMENT_}
+    EMBEDDED=yes
+    ( echo "/* Script for -tcm: normal executables using TCM */"
+      TCM=yes
+      . ${CUSTOMIZER_SCRIPT}
+      . ${srcdir}/scripttempl/${SCRIPT_NAME}.sc
+    ) | sed -e '/^ *$/d;s/[ 	]*$//' > ldscripts/${EMULATION_NAME}.tcm
+    EMBEDDED=
+    ;;
+esac
+
 case " $EMULATION_LIBPATH " in
     *" ${EMULATION_NAME} "*) COMPILE_IN=true;;
 esac

@@ -1761,6 +1761,9 @@ obj_elf_ident (int ignore ATTRIBUTE_UNUSED)
 #ifdef md_elf_section_change_hook
       md_elf_section_change_hook ();
 #endif
+#ifdef md_elf_section_change_hook
+      md_elf_section_change_hook ();
+#endif
       p = frag_more (1);
       *p = 0;
     }

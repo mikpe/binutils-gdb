@@ -44,7 +44,8 @@ if { ([istarget "*-*-*elf*"]
       || [istarget "m6812-*"]
       || [istarget "sparc*-*-solaris*"]
       || [istarget "mips*-*-irix6*"]
-      || [istarget "arm*-*-eabi"])
+      || [istarget "arm*-*-eabi"]
+      || [istarget "arm*-*-nucleuseabi"])
      && ![istarget *-*-linux*aout*]
      && ![istarget *-*-linux*coff*]
      && ![istarget *-*-linux*oldld*]
