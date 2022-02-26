@@ -1,0 +1,26 @@
+# Meta assembler testsuite
+
+if [istarget metag-*-*] {
+    # Meta 1.2 geninst
+    run_dump_test "metacore12"
+    # Meta 2.1 geninst
+    run_dump_test "metacore21"
+    # Meta 2.1 extra
+    run_dump_test "metacore21ext"
+    # Meta 2.1 FPU geninst
+    run_dump_test "metafpu21"
+    # Meta 2.1 FPU extra
+    run_dump_test "metafpu21ext"
+    # Meta 2.1 DSP
+    run_dump_test "metadsp21"
+    # Meta 2.1 DSP extra
+    run_dump_test "metadsp21ext"
+    # Meta 2.1 illegal instructions
+    run_list_test "metacore21-invalid" ""
+    # Meta 2.1 DSP illegal instructions
+    run_list_test "metadsp21-invalid" "-mdsp=metac21"
+    # label arithmetic
+    run_dump_test "labelarithmetic"
+    # TLS
+    run_dump_test "tls"
+}
