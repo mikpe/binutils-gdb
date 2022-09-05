@@ -1986,13 +1986,15 @@ to compensate for the borrow when the low bits are added. */
   BFD_RELOC_NS32K_DISP_16_PCREL,
   BFD_RELOC_NS32K_DISP_32_PCREL,
 
-/* Picojava relocs.  Not all of these appear in object files. */
+/* picoJava relocs.  Not all of these appear in object files. */
   BFD_RELOC_PJ_CODE_HI16,
   BFD_RELOC_PJ_CODE_LO16,
   BFD_RELOC_PJ_CODE_DIR16,
   BFD_RELOC_PJ_CODE_DIR32,
   BFD_RELOC_PJ_CODE_REL16,
   BFD_RELOC_PJ_CODE_REL32,
+  BFD_RELOC_PJ_WORDS_PUSHED,
+  BFD_RELOC_PJ_CODE_HILO,
 
 /* Power(rs6000) and PowerPC relocations. */
   BFD_RELOC_PPC_B26,
