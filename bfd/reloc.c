@@ -2120,8 +2120,12 @@ ENUMX
   BFD_RELOC_PJ_CODE_REL16
 ENUMX
   BFD_RELOC_PJ_CODE_REL32
+ENUMX
+  BFD_RELOC_PJ_WORDS_PUSHED
+ENUMX
+  BFD_RELOC_PJ_CODE_HILO
 ENUMDOC
-  Picojava relocs.  Not all of these appear in object files.
+  picoJava relocs.  Not all of these appear in object files.
 
 ENUM
   BFD_RELOC_PPC_B26

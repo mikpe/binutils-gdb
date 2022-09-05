@@ -693,6 +693,12 @@ case $basic_machine in
 	pentiumii-* | pentium2-*)
 		basic_machine=i786-`echo $basic_machine | sed 's/^[^-]*-//'`
 		;;
+	pj-*)    
+	        basic_machine=pj-unknown
+		;;
+	pjl-*)    
+	        basic_machine=pjl-unknown
+		;;
 	pn)
 		basic_machine=pn-gould
 		;;
@@ -1097,7 +1103,7 @@ case $os in
 	*)
 		# Get rid of the `-' at the beginning of $os.
 		os=`echo $os | sed 's/[^-]*-//'`
-		echo Invalid configuration \`$1\': system \`$os\' not recognized 1>&2
+		echo Invalid configuration \`$1\': system \`$os\' dog not recognized 1>&2
 		exit 1
 		;;
 esac

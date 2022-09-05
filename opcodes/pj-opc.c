@@ -20,6 +20,30 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
 #include "sysdep.h"
 #include "opcode/pj.h"
 
+/* Function to initialize the provided vector with a mapping of
+   conditional branches to their reverse. */
+
+void pj_opc_rev_init (unsigned char *revop)
+{
+  memset (revop, 0, 256);
+  revop[IF_ICMPGE] = IF_ICMPLT;
+  revop[IF_ICMPLT] = IF_ICMPGE;
+  revop[IF_ICMPGT] = IF_ICMPLE;
+  revop[IF_ICMPLE] = IF_ICMPGT;
+  revop[IFEQ] = IFNE;
+  revop[IFNE] = IFEQ;
+  revop[IFLE] = IFGT;
+  revop[IFLT] = IFGE;
+  revop[IFGE] = IFLT;
+  revop[IFGT] = IFLE;
+  revop[IFNULL] = IFNONNULL;
+  revop[IFNONNULL] = IFNULL;
+  revop[IF_ACMPEQ] = IF_ACMPNE;
+  revop[IF_ACMPNE] = IF_ACMPEQ;
+  revop[IF_ICMPEQ] = IF_ICMPNE;
+  revop[IF_ICMPNE] = IF_ICMPEQ ;
+}
+
 const pj_opc_info_t pj_opc_info[512] =
 {
 { 0x00,   -1, 1, {O_N, O_N}, "nop"},
@@ -68,11 +92,11 @@ const pj_opc_info_t pj_opc_info[512] =
 { 0x2b,   -1, 1, {O_N, O_N}, "aload_1"},
 { 0x2c,   -1, 1, {O_N, O_N}, "aload_2"},
 { 0x2d,   -1, 1, {O_N, O_N}, "aload_3"},
-{ 0x2e,   -1, 1, {O_N, O_N}, "iaload"},
-{ 0x2f,   -1, 1, {O_N, O_N}, "laload"},
-{ 0x30,   -1, 1, {O_N, O_N}, "faload"},
-{ 0x31,   -1, 1, {O_N, O_N}, "daload"},
-{ 0x32,   -1, 1, {O_N, O_N}, "aaload"},
+{ 0x2e,   -1, 3, {O_N, O_N}, "iaload"},
+{ 0x2f,   -1, 3, {O_N, O_N}, "laload"},
+{ 0x30,   -1, 3, {O_N, O_N}, "faload"},
+{ 0x31,   -1, 3, {O_N, O_N}, "daload"},
+{ 0x32,   -1, 3, {O_N, O_N}, "aaload"},
 { 0x33,   -1, 1, {O_N, O_N}, "baload"},
 { 0x34,   -1, 1, {O_N, O_N}, "caload"},
 { 0x35,   -1, 1, {O_N, O_N}, "saload"},
@@ -190,8 +214,8 @@ const pj_opc_info_t pj_opc_info[512] =
 { 0xa5,   -1, 3, {O_R16, O_N}, "if_acmpeq"},
 { 0xa6,   -1, 3, {O_R16, O_N}, "if_acmpne"},
 { 0xa7,   -1, 3, {O_R16, O_N}, "goto"},
-{ 0xa8,   -1, 3, {O_N, O_N}, "jsr"},
-{ 0xa9,   -1, 2, {O_N, O_N}, "ret"},
+{ 0xa8,   -1, 3, {O_R16, O_N}, "jsr"},
+{ 0xa9,   -1, 1, {O_U8, O_N}, "ret"},
 { 0xaa,   -1, 1, {O_N, O_N}, "tableswitch"},
 { 0xab,   -1, 1, {O_N, O_N}, "lookupswitch"},
 { 0xac,   -1, 1, {O_N, O_N}, "ireturn"},
@@ -222,8 +246,8 @@ const pj_opc_info_t pj_opc_info[512] =
 { 0xc5,   -1, 4, {O_N, O_N}, "multianewarray"},
 { 0xc6,   -1, 3, {O_N, O_N}, "ifnull"},
 { 0xc7,   -1, 3, {O_N, O_N}, "ifnonnull"},
-{ 0xc8,   -1, 5, {O_N, O_N}, "goto_w"},
-{ 0xc9,   -1, 5, {O_N, O_N}, "jsr_w"},
+{ 0xc8,   -1, 5, {O_R32, O_N}, "goto_w"},
+{ 0xc9,   -1, 5, {O_R32, O_N}, "jsr_w"},
 { 0xca,   -1, 1, {O_N, O_N}, "breakpoint"},
 { 0xcb,   -1, 1, {O_N, O_N}, "bytecode"},
 { 0xcc,   -1, 1, {O_N, O_N}, "try"},
@@ -242,7 +266,7 @@ const pj_opc_info_t pj_opc_info[512] =
 { 0xd9,   -1, 1, {O_N, O_N}, "bad_d9"},
 { 0xda,   -1, 1, {O_N, O_N}, "bad_da"},
 { 0xdb,   -1, 1, {O_N, O_N}, "bad_db"},
-{ 0xdc,   -1, 1, {O_N, O_N}, "bad_dc"},
+{ 0xdc,   -1, 1, {O_N, O_N}, "aastore_quick"},
 { 0xdd,   -1, 1, {O_N, O_N}, "bad_dd"},
 { 0xde,   -1, 1, {O_N, O_N}, "bad_de"},
 { 0xdf,   -1, 1, {O_N, O_N}, "bad_df"},
@@ -254,7 +278,7 @@ const pj_opc_info_t pj_opc_info[512] =
 { 0xe5,   -1, 1, {O_N, O_N}, "bad_e5"},
 { 0xe6,   -1, 1, {O_N, O_N}, "bad_e6"},
 { 0xe7,   -1, 1, {O_N, O_N}, "bad_e7"},
-{ 0xe8,   -1, 1, {O_N, O_N}, "bad_e8"},
+{ 0xe8,   -1, 1, {O_U16, O_N}, "agetstatic_quick"},
 { 0xe9,   -1, 1, {O_N, O_N}, "bad_e9"},
 { 0xea,   -1, 1, {O_N, O_N}, "bad_ea"},
 { 0xeb,   -1, 1, {O_N, O_N}, "bad_eb"},
@@ -451,26 +475,26 @@ const pj_opc_info_t pj_opc_info[512] =
 { 0xff, 0xab, 2, {O_N, O_N}, "bad"},
 { 0xff, 0xac, 2, {O_N, O_N}, "bad"},
 { 0xff, 0xad, 2, {O_N, O_N}, "bad"},
-{ 0xff, 0xae, 2, {O_N, O_N}, "tm_putchar"},
+{ 0xff, 0xae, 2, {O_N, O_N}, "tm_check_args"},
 { 0xff, 0xaf, 2, {O_N, O_N}, "tm_exit"},
 { 0xff, 0xb0, 2, {O_N, O_N}, "tm_trap"},
 { 0xff, 0xb1, 2, {O_N, O_N}, "tm_minfo"},
-{ 0xff, 0xb2, 2, {O_N, O_N}, "bad"},
-{ 0xff, 0xb3, 2, {O_N, O_N}, "bad"},
-{ 0xff, 0xb4, 2, {O_N, O_N}, "bad"},
-{ 0xff, 0xb5, 2, {O_N, O_N}, "bad"},
-{ 0xff, 0xb6, 2, {O_N, O_N}, "bad"},
-{ 0xff, 0xb7, 2, {O_N, O_N}, "bad"},
-{ 0xff, 0xb8, 2, {O_N, O_N}, "bad"},
-{ 0xff, 0xb9, 2, {O_N, O_N}, "bad"},
-{ 0xff, 0xba, 2, {O_N, O_N}, "bad"},
-{ 0xff, 0xbb, 2, {O_N, O_N}, "bad"},
-{ 0xff, 0xbc, 2, {O_N, O_N}, "bad"},
-{ 0xff, 0xbd, 2, {O_N, O_N}, "bad"},
-{ 0xff, 0xbe, 2, {O_N, O_N}, "bad"},
-{ 0xff, 0xbf, 2, {O_N, O_N}, "bad"},
-{ 0xff, 0xc0, 2, {O_N, O_N}, "bad"},
-{ 0xff, 0xc1, 2, {O_N, O_N}, "bad"},
+{ 0xff, 0xb2, 2, {O_N, O_N}, "tm_not_implemented"},
+{ 0xff, 0xb3, 2, {O_N, O_N}, "read_global4"},
+{ 0xff, 0xb4, 2, {O_N, O_N}, "read_global5"},
+{ 0xff, 0xb5, 2, {O_N, O_N}, "read_global6"},
+{ 0xff, 0xb6, 2, {O_N, O_N}, "write_global4"},
+{ 0xff, 0xb7, 2, {O_N, O_N}, "write_global5"},
+{ 0xff, 0xb8, 2, {O_N, O_N}, "write_global6"},
+{ 0xff, 0xb9, 2, {O_N, O_N}, "tm_movstrsi"},
+{ 0xff, 0xba, 2, {O_N, O_N}, "tm_memsetsi"},
+{ 0xff, 0xbb, 2, {O_N, O_N}, "tm_cmpstrsi"},
+{ 0xff, 0xbc, 2, {O_N, O_N}, "tm_strcpy"},
+{ 0xff, 0xbd, 2, {O_N, O_N}, "tm_strcmp"},
+{ 0xff, 0xbe, 2, {O_N, O_N}, "tm_strlensi"},
+{ 0xff, 0xbf, 2, {O_N, O_N}, "tm_frame"},
+{ 0xff, 0xc0, 2, {O_N, O_N}, "tm_load_long"},
+{ 0xff, 0xc1, 2, {O_N, O_N}, "tm_store_long"},
 { 0xff, 0xc2, 2, {O_N, O_N}, "bad"},
 { 0xff, 0xc3, 2, {O_N, O_N}, "bad"},
 { 0xff, 0xc4, 2, {O_N, O_N}, "bad"},
@@ -534,3 +558,4 @@ const pj_opc_info_t pj_opc_info[512] =
 { 0xff, 0xfe, 2, {O_N, O_N}, "bad"},
 { 0xff, 0xff, 2, {O_N, O_N}, "bad"},
 };
+

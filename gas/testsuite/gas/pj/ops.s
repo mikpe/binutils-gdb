@@ -226,28 +226,28 @@ foo19:
 	if_acmpeq .L7
 	if_acmpne .L8
 	goto .L6
-	jsr
-	ret
+	jsr .L2
+	ret 201
 .Lt:	tableswitch
 
 	.align 2
-	.long .L2-.Lt
+	.long .L5-.Lt
 	.long 1
 	.long 5
-	.long .L7-.Lt
-	.long .L5-.Lt
 	.long .L18-.Lt
 	.long .L7-.Lt
 	.long .L5-.Lt
+	.long .L6-.Lt
+	.long .L15-.Lt
 .Ll:	lookupswitch
 
 	.align 2
-	.long .L6-.Ll
+	.long .L16-.Ll
 	.long 2
 	.long 7
-	.long .L15-.Ll
+	.long .L14-.Ll
 	.long 37
-	.long .L16-.Ll
+	.long .L17-.Ll
 	ireturn
 	lreturn
 	freturn
@@ -275,8 +275,8 @@ foo19:
 	multianewarray
 	ifnull
 	ifnonnull
-	goto_w
-	jsr_w
+	goto_w .L1
+	jsr_w .L15
 	breakpoint
 	bytecode
 	try
@@ -284,16 +284,18 @@ foo19:
 	catch
 	var
 	endvar
-	sethi -20317
-	load_word_index 90, -91
-	load_short_index 93, -123
-	load_char_index 23, -40
-	load_byte_index 233, -34
-	load_ubyte_index 212, 43
-	store_word_index 178, 77
-	na_store_word_index 198, 27
-	store_short_index 180, -44
-	store_byte_index 17, -114
+	aastore_quick
+	agetstatic_quick 45317
+	sethi 8983
+	load_word_index 88, 105
+	load_short_index 94, 84
+	load_char_index 171, 50
+	load_byte_index 205, 70
+	load_ubyte_index 155, 52
+	store_word_index 84, -111
+	na_store_word_index 14, 2
+	store_short_index 116, -63
+	store_byte_index 33, -67
 	load_ubyte
 	load_byte
 	load_char
@@ -391,7 +393,23 @@ foo19:
 	write_global1
 	write_global2
 	write_global3
-	tm_putchar
+	tm_check_args
 	tm_exit
 	tm_trap
 	tm_minfo
+	tm_not_implemented
+	read_global4
+	read_global5
+	read_global6
+	write_global4
+	write_global5
+	write_global6
+	tm_movstrsi
+	tm_memsetsi
+	tm_cmpstrsi
+	tm_strcpy
+	tm_strcmp
+	tm_strlensi
+	tm_frame
+	tm_load_long
+	tm_store_long

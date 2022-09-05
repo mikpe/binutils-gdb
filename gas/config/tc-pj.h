@@ -27,36 +27,57 @@
 #define WORKING_DOT_WORD
 #define IGNORE_NONSTANDARD_ESCAPES
 #define TARGET_ARCH bfd_arch_pj
+
+#ifndef TARGET_BYTES_BIG_ENDIAN
+#define TARGET_BYTES_BIG_ENDIAN 0
+#endif
+
 #define TARGET_FORMAT (target_big_endian ? "elf32-pj" : "elf32-pjl")
 #define LISTING_HEADER                    				\
   (target_big_endian                      				\
    ? "Pico Java GAS Big Endian"           				\
    : "Pico Java GAS Little Endian")
 
+#define LISTING_LHS_WIDTH 1
+#define LISTING_WORD_SIZE 4
 
 void pj_cons_fix_new_pj PARAMS ((struct frag *, int, int, expressionS *));
-arelent *tc_gen_reloc PARAMS((asection *section, struct fix *fixp));
 
-#define md_section_align(SEGMENT, SIZE)     (SIZE)
-#define md_convert_frag(B, S, F)            (as_fatal (_("convert_frag\n")), 0)
-#define md_estimate_size_before_relax(A, B) (as_fatal (_("estimate size\n")),0)
+#define md_section_align(SE,SZ)             (SZ)
 #define md_undefined_symbol(NAME)           0
+
 
 /* PC relative operands are relative to the start of the opcode, and the operand
    is always one byte into the opcode. */
 
 #define md_pcrel_from(FIXP) 						\
-	((FIXP)->fx_where + (FIXP)->fx_frag->fr_address - 1)
-
+ 	((FIXP)->fx_where + (FIXP)->fx_frag->fr_address - 1)
 
 #define TC_CONS_FIX_NEW(FRAG, WHERE, NBYTES, EXP) \
 	pj_cons_fix_new_pj(FRAG, WHERE, NBYTES, EXP)
 
-/* Always leave vtable relocs untouched in the output. */
-#define TC_FORCE_RELOCATION(FIX)                                  	\
-          ((FIX)->fx_r_type == BFD_RELOC_VTABLE_INHERIT           	\
-	   || (FIX)->fx_r_type == BFD_RELOC_VTABLE_ENTRY)
 
-#define obj_fix_adjustable(FIX) 					\
-          (! ((FIX)->fx_r_type == BFD_RELOC_VTABLE_INHERIT         	\
-	   || (FIX)->fx_r_type == BFD_RELOC_VTABLE_ENTRY))
+#define TC_FIX_TYPE valueT
+
+/* hi16 and lo16 operations never overflow. */
+#define TC_INIT_FIX_DATA(fixP) \
+      if (fixP->fx_r_type == BFD_RELOC_PJ_CODE_HI16 \
+	  || fixP->fx_r_type == BFD_RELOC_PJ_CODE_LO16)  \
+          fixP->fx_no_overflow = 1;
+
+extern struct relax_type md_relax_table[];
+#define TC_GENERIC_RELAX_TABLE md_relax_table
+
+#define obj_fix_adjustable(fixP)                          \
+  (fixP->fx_addsy == NULL                                 \
+   ||  (fixP->fx_r_type != BFD_RELOC_VTABLE_INHERIT       \
+	&& fixP->fx_r_type != BFD_RELOC_VTABLE_ENTRY      \
+	&& fixP->fx_r_type != BFD_RELOC_PJ_WORDS_PUSHED))
+
+#define TC_FORCE_RELOCATION(fixP)                         \
+  (fixP->fx_r_type == BFD_RELOC_VTABLE_ENTRY              \
+   || fixP->fx_r_type == BFD_RELOC_VTABLE_INHERIT)
+
+
+
+

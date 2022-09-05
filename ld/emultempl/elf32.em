@@ -271,6 +271,8 @@ gld${EMULATION_NAME}_after_open ()
   if (link_info.relocateable || link_info.shared)
     return;
 
+  ${CREATE_THUNK_BFD}
+
   /* Get the list of files which appear in DT_NEEDED entries in
      dynamic objects included in the link (often there will be none).
      For each such file, we want to track down the corresponding
@@ -789,6 +791,8 @@ gld${EMULATION_NAME}_before_allocation ()
 	s->_raw_size = 0;
       }
   }
+
+  ${PROCESS_THUNK_BFD}
 }
 
 /* This is called by the before_allocation routine via

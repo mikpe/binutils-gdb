@@ -3,5 +3,6 @@
 #
 if [istarget pj*] then {
     run_dump_test "ops"
+    run_dump_test "reloc"
 }
 

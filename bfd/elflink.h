@@ -1587,7 +1587,8 @@ elf_link_add_object_symbols (abfd, info)
 	         definition.  This is an arbitrary choice, since the
 	         other bits have no general meaning.  */
 	      if (!symvis && !hvis
-		  && (definition || h->other == 0))
+		  && (definition || h->other == 0)
+		  && !(bind == STB_WEAK && h->root.type == bfd_link_hash_defined))
 		h->other = sym.st_other;
 	    }
 

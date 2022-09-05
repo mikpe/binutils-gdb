@@ -723,6 +723,7 @@ typedef enum elf_linker_section_enum
   LINKER_SECTION_PLT,			/* .plt section for generated procedure stubs */
   LINKER_SECTION_SDATA,			/* .sdata/.sbss section for PowerPC */
   LINKER_SECTION_SDATA2,		/* .sdata2/.sbss2 section for PowerPC */
+  LINKER_SECTION_THUNKS,		/* .thunk section for picojava */
   LINKER_SECTION_MAX			/* # of linker sections */
 } elf_linker_section_enum_t;
 
