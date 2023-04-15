@@ -1209,7 +1209,7 @@ case "${target}" in
     noconfigdirs="$noconfigdirs $target_libraries"
     ;;
   pdp10-*-*)
-    noconfigdirs="$noconfigdirs gas gdb gdbserver gold gprof ld libctf readline sim"
+    noconfigdirs="$noconfigdirs gdb gdbserver gold gprof ld libctf readline sim"
     ;;
   pdp11-*-*)
     noconfigdirs="$noconfigdirs gdb gprof"
