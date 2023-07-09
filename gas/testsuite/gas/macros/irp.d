@@ -2,6 +2,8 @@
 #name: macro irp
 #darwin (mach-o) reverses relocs.
 #xfail: *-*-darwin* nds32*-*-*
+# pdp10 allocates two octets per nonet so the offsets are 2x the expected values
+#xfail: pdp10-*-*
 
 .*: +file format .*
 
