@@ -459,6 +459,9 @@
    architecture was derived.  */
 #define EM_CSKY_OLD		EM_MCORE
 
+/* RCA CDP1802 backend magic number.  Written in the absence of an ABI.  */
+#define EM_CDP1802		0x1802
+
 /* See the above comment before you add a new EM_* value here.  */
 
 /* Values for e_version.  */
