@@ -1289,6 +1289,7 @@ case $cpu-$vendor in
 			| c4x \
 			| c8051 \
 			| c[123]* \
+			| cdp180[2456]* \
 			| clipper \
 			| craynv \
 			| csky \
