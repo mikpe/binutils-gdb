@@ -1200,6 +1200,9 @@ case "${target}" in
   tic54x-*-*)
     noconfigdirs="$noconfigdirs target-libgloss gdb"
     ;;
+  cdp1802-*-*)
+    noconfigdirs="$noconfigdirs gdb gdbserver gold gprof readline sim"
+    ;;
   d10v-*-*)
     noconfigdirs="$noconfigdirs target-libgloss"
     ;;
