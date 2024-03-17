@@ -102,6 +102,7 @@
 #include "elf/arm.h"
 #include "elf/avr.h"
 #include "elf/bfin.h"
+#include "elf/cdp1802.h"
 #include "elf/cr16.h"
 #include "elf/cris.h"
 #include "elf/crx.h"
@@ -1286,6 +1287,7 @@ guess_is_rela (unsigned int e_machine)
     case EM_AVR:
     case EM_AVR_OLD:
     case EM_BLACKFIN:
+    case EM_CDP1802:
     case EM_CR16:
     case EM_CRIS:
     case EM_CRX:
@@ -2616,6 +2618,10 @@ dump_relocations (Filedata *          filedata,
 	  rtype = elf_bfin_reloc_type (type);
 	  break;
 
+	case EM_CDP1802:
+	  rtype = elf_cdp1802_reloc_type (type);
+	  break;
+
 	case EM_CYGNUS_MEP:
 	  rtype = elf_mep_reloc_type (type);
 	  break;
@@ -3839,6 +3845,7 @@ get_machine_name (unsigned e_machine)
     case EM_ADAPTEVA_EPIPHANY:	return "Adapteva EPIPHANY";
     case EM_CYGNUS_FRV:		return "Fujitsu FR-V";
     case EM_S12Z:               return "Freescale S12Z";
+    case EM_CDP1802:		return "RCA CDP1802";
 
     default:
       snprintf (buff, sizeof (buff), _("<unknown>: 0x%x"), e_machine);
@@ -15966,6 +15973,8 @@ is_32bit_abs_reloc (Filedata * filedata, unsigned int reloc_type)
       return reloc_type == 1;
     case EM_BLACKFIN:
       return reloc_type == 0x12; /* R_byte4_data.  */
+    case EM_CDP1802:
+      return reloc_type == 5; /* R_CDP1802_32.  */
     case EM_CRIS:
       return reloc_type == 3; /* R_CRIS_32.  */
     case EM_CR16:
@@ -16340,6 +16349,8 @@ is_16bit_abs_reloc (Filedata * filedata, unsigned int reloc_type)
     case EM_AVR_OLD:
     case EM_AVR:
       return reloc_type == 4; /* R_AVR_16.  */
+    case EM_CDP1802:
+      return reloc_type == 4; /* R_CDP1802_16.  */
     case EM_CYGNUS_D10V:
     case EM_D10V:
       return reloc_type == 3; /* R_D10V_16.  */
@@ -16625,6 +16636,7 @@ is_none_reloc (Filedata * filedata, unsigned int reloc_type)
     case EM_ARC_COMPACT3: /* R_ARC_NONE.  */
     case EM_ARC_COMPACT3_64: /* R_ARC_NONE.  */
     case EM_ARM:     /* R_ARM_NONE.  */
+    case EM_CDP1802: /* R_CDP1802_NONE.  */
     case EM_CRIS:    /* R_CRIS_NONE.  */
     case EM_FT32:    /* R_FT32_NONE.  */
     case EM_IA_64:   /* R_IA64_NONE.  */
