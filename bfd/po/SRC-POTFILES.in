@@ -49,6 +49,7 @@ cpu-arm.h
 cpu-avr.c
 cpu-bfin.c
 cpu-bpf.c
+cpu-cdp1802.c
 cpu-cr16.c
 cpu-cris.c
 cpu-crx.c
@@ -156,6 +157,7 @@ elf32-avr.c
 elf32-avr.h
 elf32-bfin.c
 elf32-bfin.h
+elf32-cdp1802.c
 elf32-cr16.c
 elf32-cr16.h
 elf32-cris.c
