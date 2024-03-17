@@ -29,6 +29,7 @@ extern int print_insn_big_arm		(bfd_vma, disassemble_info *);
 extern int print_insn_big_mips		(bfd_vma, disassemble_info *);
 extern int print_insn_big_powerpc	(bfd_vma, disassemble_info *);
 extern int print_insn_big_score         (bfd_vma, disassemble_info *);
+extern int print_insn_cdp1802		(bfd_vma, disassemble_info *);
 extern int print_insn_cr16              (bfd_vma, disassemble_info *);
 extern int print_insn_crx               (bfd_vma, disassemble_info *);
 extern int print_insn_csky		(bfd_vma, disassemble_info *);
