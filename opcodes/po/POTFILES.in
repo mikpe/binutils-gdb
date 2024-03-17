@@ -18,6 +18,8 @@ avr-dis.c
 bfin-dis.c
 bpf-dis.c
 bpf-opc.c
+cdp1802-dis.c
+cdp1802-opc.c
 cgen-asm.c
 cgen-bitset.c
 cgen-dis.c
