@@ -41,6 +41,7 @@
 #define ARCH_arm
 #define ARCH_avr
 #define ARCH_bfin
+#define ARCH_cdp1802
 #define ARCH_cr16
 #define ARCH_cris
 #define ARCH_crx
@@ -151,6 +152,11 @@ disassembler (enum bfd_architecture a,
 #ifdef ARCH_bfin
     case bfd_arch_bfin:
       disassemble = print_insn_bfin;
+      break;
+#endif
+#ifdef ARCH_cdp1802
+    case bfd_arch_cdp1802:
+      disassemble = print_insn_cdp1802;
       break;
 #endif
 #ifdef ARCH_cr16
@@ -550,6 +556,9 @@ disassembler_usage (FILE *stream ATTRIBUTE_UNUSED)
 #ifdef ARCH_arm
   print_arm_disassembler_options (stream);
 #endif
+#ifdef ARCH_cdp1802
+  print_cdp1802_disassembler_options (stream);
+#endif
 #ifdef ARCH_mips
   print_mips_disassembler_options (stream);
 #endif
@@ -613,6 +622,11 @@ disassemble_init_for_target (struct disassemble_info * info)
 #ifdef ARCH_avr
     case bfd_arch_avr:
       info->created_styled_output = true;
+      break;
+#endif
+#ifdef ARCH_cdp1802
+    case bfd_arch_cdp1802:
+      disassemble_init_cdp1802 (info);
       break;
 #endif
 #ifdef ARCH_csky
