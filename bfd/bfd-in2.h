@@ -1803,6 +1803,8 @@ enum bfd_architecture
 #define bfd_mach_amdgcn_gfx1100 0x041
 #define bfd_mach_amdgcn_gfx1101 0x046
 #define bfd_mach_amdgcn_gfx1102 0x047
+  bfd_arch_cdp1802,   /* CDP1802.  */
+#define bfd_mach_cdp1802       0
   bfd_arch_last
   };
 
@@ -7322,6 +7324,17 @@ enum bfd_reloc_code_real
   BFD_RELOC_LARCH_TLS_GD_PCADD_LO12,
   BFD_RELOC_LARCH_TLS_DESC_PCADD_HI20,
   BFD_RELOC_LARCH_TLS_DESC_PCADD_LO12,
+
+  /* CDP1802 relocations.  */
+  BFD_RELOC_CDP1802_NONE,
+  BFD_RELOC_CDP1802_8,
+  BFD_RELOC_CDP1802_HI8,
+  BFD_RELOC_CDP1802_LO8,
+  BFD_RELOC_CDP1802_16,
+  BFD_RELOC_CDP1802_32,
+  BFD_RELOC_CDP1802_GNU_VTINHERIT,
+  BFD_RELOC_CDP1802_GNU_VTENTRY,
+
   BFD_RELOC_UNUSED
 };
 typedef enum bfd_reloc_code_real bfd_reloc_code_real_type;
