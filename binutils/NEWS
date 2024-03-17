@@ -1,5 +1,7 @@
 -*- text -*-
 
+* Add support for the RCA CDP1802 processor with ELF object files.
+
 Changes in 2.44:
 
 * Support for Nios II targets has been removed except in the readelf utility,
