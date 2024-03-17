@@ -119,6 +119,8 @@ TARGET32_LIBOPCODES_CFILES = \
 	arm-dis.c \
 	avr-dis.c \
 	bfin-dis.c \
+	cdp1802-dis.c \
+	cdp1802-opc.c \
 	cgen-asm.c \
 	cgen-bitset.c \
 	cgen-dis.c \
