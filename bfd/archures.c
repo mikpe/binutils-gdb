@@ -574,6 +574,8 @@ DESCRIPTION
 .#define bfd_mach_amdgcn_gfx1100 0x041
 .#define bfd_mach_amdgcn_gfx1101 0x046
 .#define bfd_mach_amdgcn_gfx1102 0x047
+.  bfd_arch_cdp1802,     {* CDP1802.  *}
+.#define bfd_mach_cdp1802	0
 .  bfd_arch_last
 .  };
 */
@@ -634,6 +636,7 @@ extern const bfd_arch_info_type bfd_arc_arch;
 extern const bfd_arch_info_type bfd_arm_arch;
 extern const bfd_arch_info_type bfd_avr_arch;
 extern const bfd_arch_info_type bfd_bfin_arch;
+extern const bfd_arch_info_type bfd_cdp1802_arch;
 extern const bfd_arch_info_type bfd_cr16_arch;
 extern const bfd_arch_info_type bfd_cris_arch;
 extern const bfd_arch_info_type bfd_crx_arch;
@@ -722,6 +725,7 @@ static const bfd_arch_info_type * const bfd_archures_list[] =
     &bfd_arm_arch,
     &bfd_avr_arch,
     &bfd_bfin_arch,
+    &bfd_cdp1802_arch,
     &bfd_cr16_arch,
     &bfd_cris_arch,
     &bfd_crx_arch,
