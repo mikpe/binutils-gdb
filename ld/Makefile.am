@@ -204,6 +204,7 @@ ALL_EMULATION_SOURCES = \
 	eavrxmega5.c \
 	eavrxmega6.c \
 	eavrxmega7.c \
+	ecdp1802elf.c \
 	ecrisaout.c \
 	ecriself.c \
 	ecrislinux.c \
