@@ -719,6 +719,7 @@ ALL_EMULATION_SOURCES = \
 	eavrxmega5.c \
 	eavrxmega6.c \
 	eavrxmega7.c \
+	ecdp1802elf.c \
 	ecrisaout.c \
 	ecriself.c \
 	ecrislinux.c \
@@ -1329,6 +1330,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eavrxmega5.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eavrxmega6.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eavrxmega7.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecdp1802elf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecrisaout.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecriself.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecrislinux.Po@am__quote@
