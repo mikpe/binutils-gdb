@@ -1,0 +1,37 @@
+RCA CDP1802 GNU BINUTILS PORT NOTES
+===================================
+
+* The port supports the CDP 1802, 1804, and 1804AC instruction sets.
+
+* The port supports plain ELF with static linking.  Shared objects, PIC,
+  PIE, TLS relocations, and IFUNCs are not supported.
+
+* The assembler uses RCA's instruction mnemonics with standard GAS syntax
+  for directives and expressions.  Semi-colon starts line comments.
+
+  Address expressions can be wrapped in %hi(<address>) or %lo(<address>)
+  to produce the high and low bytes of those addresses in instructions
+  taking 8-bit immediate operands (e.g. ldi).
+
+* The binutils test suite is clean (on par with z80-elf and m68hc11-elf), except
+  for the "objcopy compress debug sections in archive with zlib-gnu" test case.
+
+  This test case XFAILs because binutils/testsuite/binutils-all/dw2-1.S generates
+  a .debug_line section that isn't reduced in size by zlib-compression.
+
+  The contents of the section exactly matches z80-elf, except cdp1802 is big-endian
+  while z80 is little-endian, so for cdp1802 the single 0x04 byte in the address of
+  .Lend_func_cu1 breaks a long run of NULs, which reduces the compressibility of the
+  section.
+
+  The contents of the section logically matches m68hc11-elf, except m68hc11 uses REL
+  while cdp1802 uses RELA, which for m68hc11 moves the 0x04 byte from the .debug_line
+  section to .rel.debug_line, which allows compression of its .debug_line to succeed.
+
+  In other words, that test case isn't robust.
+
+* The gas test suite is clean (on par with z80-elf and m68hc11-elf).  cdp1802 even
+  passes some tests that are XFAIL or UNSUPPORTED for z80 and m68hc11.
+
+* The ld test suite is clean (on par with z80-elf and m68hc11-elf).  cdp1802 even
+  passes some tests that are XFAIL or UNSUPPORTED for z80 and m68hc11.
