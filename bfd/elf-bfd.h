@@ -576,6 +576,7 @@ enum elf_target_id
   X86_64_ELF_DATA,
   XTENSA_ELF_DATA,
   VAX_ELF_DATA,
+  /* TODO: CDP1802 TBD */
   GENERIC_ELF_DATA
 };
 
@@ -3005,6 +3006,7 @@ extern char *elfcore_write_loongarch_lsx
   (bfd *, char *, int *, const void*, int);
 extern char *elfcore_write_loongarch_lasx
   (bfd *, char *, int *, const void*, int);
+/* TODO: CDP1802 TBD */
 
 /* Internal structure which holds information to be included in the
    PRPSINFO section of Linux core files.
