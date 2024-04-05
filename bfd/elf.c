@@ -10697,6 +10697,8 @@ elfcore_grok_loongarch_lasx (bfd *abfd, Elf_Internal_Note *note)
   return elfcore_make_note_pseudosection (abfd, ".reg-loongarch-lasx", note);
 }
 
+/* TODO: CDP1802 TBD */
+
 #if defined (HAVE_PRPSINFO_T)
 typedef prpsinfo_t   elfcore_psinfo_t;
 #if defined (HAVE_PRPSINFO32_T)		/* Sparc64 cross Sparc32 */
@@ -11439,6 +11441,8 @@ elfcore_grok_note (bfd *abfd, Elf_Internal_Note *note)
 	return elfcore_grok_loongarch_lasx (abfd, note);
       else
 	return true;
+
+    /* TODO: CDP1802 TBD */
 
     case NT_PRPSINFO:
     case NT_PSINFO:
@@ -13143,6 +13147,8 @@ elfcore_write_loongarch_lasx (bfd *abfd,
 			     note_name, NT_LARCH_LASX, loongarch_lasx, size);
 }
 
+/* TODO: CDP1802 TBD */
+
 /* Write the buffer of csr values in CSRS (length SIZE) into the note
    buffer BUF and update *BUFSIZ.  ABFD is the bfd the note is being
    written into.  Return a pointer to the new start of the note buffer, to
@@ -13287,6 +13293,7 @@ elfcore_write_register_note (bfd *abfd,
     return elfcore_write_loongarch_lsx (abfd, buf, bufsiz, data, size);
   if (strcmp (section, ".reg-loongarch-lasx") == 0)
     return elfcore_write_loongarch_lasx (abfd, buf, bufsiz, data, size);
+  /* TODO: CDP1802 TBD */
   return NULL;
 }
 
