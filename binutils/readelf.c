@@ -5061,6 +5061,10 @@ get_machine_flags (Filedata * filedata, unsigned e_flags, unsigned e_machine)
 	  out = decode_BLACKFIN_machine_flags (out, e_flags);
 	  break;
 
+	case EM_CDP1802:
+	  /* TODO: TBD */
+	  break;
+
 	case EM_CYGNUS_FRV:
 	  out = decode_FRV_machine_flags (out, e_flags);
 	  break;
