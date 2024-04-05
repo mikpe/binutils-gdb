@@ -10798,6 +10798,8 @@ elfcore_grok_loongarch_lasx (bfd *abfd, Elf_Internal_Note *note)
   return elfcore_make_note_pseudosection (abfd, NOTE_PSEUDO_SECTION_LOONGARCH_LASX, note);
 }
 
+/* TODO: CDP1802 TBD */
+
 #if defined (HAVE_PRPSINFO_T)
 typedef prpsinfo_t   elfcore_psinfo_t;
 #if defined (HAVE_PRPSINFO32_T)		/* Sparc64 cross Sparc32 */
@@ -11270,6 +11272,8 @@ elfcore_grok_note (bfd *abfd, Elf_Internal_Note *note)
 	return elfcore_grok_riscv_csr (abfd, note);
       else
 	return true;
+
+    /* TODO: CDP1802 TBD */
 
     case NT_PRPSINFO:
     case NT_PSINFO:
@@ -12974,6 +12978,8 @@ elfcore_write_loongarch_lasx (bfd *abfd,
 			     loongarch_lasx, size);
 }
 
+/* TODO: CDP1802 TBD */
+
 /* Write the buffer of csr values in CSRS (length SIZE) into the note
    buffer BUF and update *BUFSIZ.  ABFD is the bfd the note is being
    written into.  Return a pointer to the new start of the note buffer, to
@@ -13034,6 +13040,7 @@ elfcore_write_register_note (bfd *abfd,
       { NOTE_PSEUDO_SECTION_AARCH_ZT,         elfcore_write_aarch_zt},
       { NOTE_PSEUDO_SECTION_ARC_V2,           elfcore_write_arc_v2},
       { NOTE_PSEUDO_SECTION_ARM_VFP,          elfcore_write_arm_vfp},
+      /* TODO: CDP1802 TBD */
       { NOTE_PSEUDO_SECTION_I386_TLS,         elfcore_write_i386_tls},
       { NOTE_PSEUDO_SECTION_LOONGARCH_CPUCFG, elfcore_write_loongarch_cpucfg},
       { NOTE_PSEUDO_SECTION_LOONGARCH_LASX,   elfcore_write_loongarch_lasx},
