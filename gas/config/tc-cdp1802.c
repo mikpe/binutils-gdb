@@ -408,6 +408,7 @@ cdp1802_md_apply_fix (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
       if (fixP->fx_r_type == BFD_RELOC_CDP1802_HI8)
 	value >>= 8;
       ((bfd_byte *) where)[0] = (bfd_byte) (value & 0x00ff);
+      fixP->fx_no_overflow = 1;
       break;
 
     case BFD_RELOC_8:
