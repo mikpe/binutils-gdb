@@ -393,7 +393,7 @@ cdp1802_md_apply_fix (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
       break;
 
     case BFD_RELOC_16:
-      if (value < -((1L << (16 - 1)) - 1) || value > (1L << (16 - 1)))
+      if (value < -((1L << (16 - 1)) - 1) || value >= (1L << 16))
 	as_bad_where (fixP->fx_file, fixP->fx_line,
 		      _("Value %ld out of 16-bit range."), value);
       ((bfd_byte *) where)[0] = (value >> 8) & 0x00ff;
