@@ -6870,6 +6870,7 @@ warning: %pB has a TLS segment with execute permission"),
 		       && ((phdr->p_flags & (PF_R | PF_W | PF_X))
 			   == (PF_R | PF_W | PF_X)))
 		{
+#if 0	/* FIXME: figure out why ld merges .data and .bss with .text */
 		  if (link_info->warn_is_error_for_rwx_segments)
 		    {
 		      _bfd_error_handler (_("\
@@ -6883,6 +6884,7 @@ warning: %pB has a LOAD segment with RWX permissions"),
 				      abfd);
 		  if (warned_tls)
 		    break;
+#endif
 
 		  warned_rwx = true;
 		}
