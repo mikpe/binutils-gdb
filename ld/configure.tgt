@@ -52,6 +52,7 @@ if test "${ac_default_ld_warn_rwx_segments}" = unset; then
       # The HPPA's and SPARC's PLT sections use a constructed trampoline
       # hence it needs to have a RWX segment.
       # Many MIPS targets use executable segments.
+    cdp1802-*-elf | \
     cris-*-* | crisv32-*-* | \
     hppa*-*-* | \
     mips*-*-* | \
