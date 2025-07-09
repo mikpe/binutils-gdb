@@ -36,6 +36,10 @@ void   md_begin (void);
 #ifndef md_number_to_chars
 void   md_number_to_chars (char *, valueT, int);
 #endif
+#ifndef md_number_to_chars_progbits
+#define md_number_to_chars_progbits md_number_to_chars
+#endif
+
 void   md_apply_fix (fixS *, valueT *, segT);
 
 #ifndef WORKING_DOT_WORD
