@@ -85,6 +85,16 @@
 
 typedef uint16_t pdp10_cpu_models_t;
 
+/* This provides names for a subset of the CPU combinations above.  */
+
+struct pdp10_cpu_model {
+  const char *name;
+  pdp10_cpu_models_t models;
+};
+
+extern const struct pdp10_cpu_model pdp10_cpu_models[];
+extern const int pdp10_num_cpu_models;
+
 /* Device fields in IO instructions.  */
 
 typedef uint8_t pdp10_cpu_device_t;     /* [0,127] */
@@ -194,7 +204,7 @@ struct pdp10_insn {
 extern const struct pdp10_insn pdp10_insns[];
 extern const int pdp10_num_insns;
 
-extern pdp10_cpu_models_t pdp10_cpu_models_from_name (const char *name);
+extern pdp10_cpu_models_t pdp10_cpu_models_from_name (const char *name, size_t len);
 extern int pdp10_cpu_device_from_name (const char *name, pdp10_cpu_models_t models);
 
 #endif /* _OPCODE_PDP10_H_ */

@@ -23,34 +23,37 @@
 #include "libiberty.h"
 #include <strings.h>
 
-static const struct {
-  const char *name;
-  pdp10_cpu_models_t models;
-} cpu_models[] = {
-    { "all", PDP10_ALL },
-    { "ka10", PDP10_KA10 },
-    { "ki10", PDP10_KI10 },
-    { "kl10", PDP10_KL10 },
-    { "kl10b", PDP10_KL10_271 },
-    { "pdp6", PDP6 },
-    { "xkl1", PDP10_XKL1 },
+const struct pdp10_cpu_model pdp10_cpu_models[] = {
+  { "all",    PDP10_ALL },
+  { "ka10",   PDP10_KA10 },
+  { "ki10",   PDP10_KI10 },
+  { "kl10",   PDP10_KL10 },
+  { "kl10b",  PDP10_KL10_271 },
+  { "pdp6",   PDP6 },
+  { "xkl1",   PDP10_XKL1 },
 };
 
+const int pdp10_num_cpu_models = ARRAY_SIZE (pdp10_cpu_models);
+
 pdp10_cpu_models_t
-pdp10_cpu_models_from_name (const char *name)
+pdp10_cpu_models_from_name (const char *name, size_t len)
 {
   unsigned int low, high, mid;
   int cmp;
 
   low = 0;
-  high = ARRAY_SIZE (cpu_models);
+  high = ARRAY_SIZE (pdp10_cpu_models);
 
   while (low < high)
     {
       mid = (low + high) / 2;
-      cmp = strcasecmp (name, cpu_models[mid].name);
+      cmp = strncasecmp (name, pdp10_cpu_models[mid].name, len);
       if (cmp == 0)
-	return cpu_models[mid].models;
+	{
+	  if (pdp10_cpu_models[mid].name[len] == '\0')
+	    return pdp10_cpu_models[mid].models;
+	  high = mid;
+	}
       else if (cmp < 0)
 	high = mid;
       else

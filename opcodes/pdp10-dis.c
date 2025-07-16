@@ -27,30 +27,22 @@
 #include <stdint.h>
 
 struct pdp10_private_data {
-  /* ISA level.  */
-  uint16_t isa_level;
+  pdp10_cpu_models_t models;
 };
 
-static const struct {
-  const char *name;
-  uint16_t val;
-  const char *description;
-} pdp10_options[] = {
-  { "dummy", 0, "no effect" }  /* TODO: allow to override CPU and possibly section */
-};
+/* For now the only options we recognize are the names of the CPU families.  */
 
 static void
-parse_pdp10_disassembler_option (struct pdp10_private_data *priv, const char *option, unsigned int len)
+parse_pdp10_disassembler_option (struct pdp10_private_data *priv, const char *option, int len)
 {
-  unsigned int i;
+  pdp10_cpu_models_t models;
 
-  for (i = 0; i < ARRAY_SIZE (pdp10_options); ++i)
-    if (strncmp (pdp10_options[i].name, option, len) == 0
-	&& strlen (pdp10_options[i].name) == len)
-      {
-	priv->isa_level = pdp10_options[i].val;
-	return;
-      }
+  models = pdp10_cpu_models_from_name (option, len);
+  if (models)
+    {
+      priv->models = models;
+      return;
+    }
 
   opcodes_error_handler (_("unrecognized disassembler option: %.*s"), len, option);
 }
@@ -69,7 +61,7 @@ parse_pdp10_disassembler_options (struct disassemble_info *info)
   while (*options != '\0' )
     {
       char *comma;
-      size_t len;
+      int len;
 
       comma = strchr (options, ',');
       if (comma)
@@ -92,25 +84,12 @@ parse_pdp10_disassembler_options (struct disassemble_info *info)
 void
 print_pdp10_disassembler_options (FILE *stream)
 {
-  unsigned int i, max_len;
-
   fprintf (stream, _("\n\
 The following PDP-10 specific disassembler options are supported for use\n\
 with the -M switch (multiple options should be separated by commas):\n"));
 
-  max_len = 0;
-  for (i = 0; i < ARRAY_SIZE (pdp10_options); ++i)
-    {
-      unsigned int len = strlen (pdp10_options[i].name);
-      if (len > max_len)
-	max_len = len;
-    }
-
-  for (i = 0; i < ARRAY_SIZE (pdp10_options); ++i)
-    fprintf (stream,  "  %s%*c  %s\n",
-	     pdp10_options[i].name,
-	     (int)(max_len - strlen (pdp10_options[i].name)), ' ',
-	     _(pdp10_options[i].description));
+  for (int i = 0; i < pdp10_num_cpu_models; ++i)
+    fprintf (stream,  "  %s\n", pdp10_cpu_models[i].name);
 }
 
 void
@@ -126,7 +105,7 @@ disassemble_init_pdp10 (struct disassemble_info *info)
 
   priv = malloc (sizeof *priv);
   memset (priv, -1, sizeof *priv);
-  priv->isa_level = 0;
+  priv->models = PDP10_ALL;
   info->private_data = priv;
 
   parse_pdp10_disassembler_options (info);
