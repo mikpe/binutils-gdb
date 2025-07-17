@@ -28,6 +28,9 @@
 
 struct pdp10_private_data {
   pdp10_cpu_models_t models;
+
+  /* Maps high 13 bits of instruction words to matching entry in pdp10_insns[].  */
+  int high13_to_index[1 << 13];
 };
 
 /* For now the only options we recognize are the names of the CPU families.  */
@@ -104,14 +107,71 @@ disassemble_init_pdp10 (struct disassemble_info *info)
   info->octets_per_byte = 2;
 
   priv = malloc (sizeof *priv);
-  memset (priv, -1, sizeof *priv);
-  priv->models = PDP10_ALL;
+  priv->models = PDP10_KL10_271up;
+  memset (priv->high13_to_index, -1, sizeof (priv->high13_to_index));
   info->private_data = priv;
 
   parse_pdp10_disassembler_options (info);
 
   /* TODO: maybe use low 16 bits of info->flags */
-  /* TODO: maybe use info->private_data for a quick lookup table */
+
+  /* Populate priv->high13_to_index.  Uses selected CPU models.  */
+
+  for (int i = 0; i < pdp10_num_insns; ++i)
+    {
+      int h13lo, h13hi;
+
+      /* Skip insns invalid for selected CPU models.  */
+      if ((pdp10_insns[i].models & priv->models) == 0)
+	continue;
+
+      /* Iterate over all high13 bit patterns for the insn.  */
+
+      h13lo = pdp10_insns[i].high13;
+      switch (pdp10_insns[i].format & PDP10_FMT_MASK)
+	{
+	case PDP10_FMT_BASIC:
+	  h13hi = h13lo + 16;	/* all ACs */
+	  break;
+	case PDP10_FMT_A_NONZERO:
+	  h13lo += 1;
+	  h13hi = h13lo + 15;	/* all ACs except AC0 */
+	  break;
+	default:
+	  h13hi = h13lo + 1;	/* no AC, just one pattern */
+	  break;
+	}
+      for (int h13 = h13lo; h13 < h13hi; ++h13)
+	{
+	  int previ = priv->high13_to_index[h13];
+
+	  /* If this is the first candidate for this pattern, take it.  */
+	  if (previ == -1)
+	    {
+	      priv->high13_to_index[h13] = i;
+	      continue;
+	    }
+
+	  /* If this is an alias keep initial entry.  */
+	  if (pdp10_insns[previ].format == pdp10_insns[i].format)
+	    continue;
+
+	  /* If one is A_OPCODE and the other is BASIC, keep the A_OPCODE one.  */
+	  if ((pdp10_insns[previ].format & PDP10_FMT_MASK) == PDP10_FMT_A_OPCODE
+	      && (pdp10_insns[i].format & PDP10_FMT_MASK) == PDP10_FMT_BASIC)
+	    continue;
+	  if ((pdp10_insns[previ].format & PDP10_FMT_MASK) == PDP10_FMT_BASIC
+	      && (pdp10_insns[i].format & PDP10_FMT_MASK) == PDP10_FMT_A_OPCODE)
+	    {
+	      priv->high13_to_index[h13] = i;
+	      continue;
+	    }
+
+	  /* Warn about the ambiguity.  */
+	  fprintf (stderr, "Opcode %05o is ambiguous for models %#x\n",
+		   h13, priv->models);
+	}
+    }
 }
 
 static int

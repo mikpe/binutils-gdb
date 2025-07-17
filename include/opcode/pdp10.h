@@ -181,6 +181,8 @@ typedef uint8_t pdp10_cpu_device_t;     /* [0,127] */
 #define PDP10_FMT_A_NONZERO     0x02
 #define PDP10_FMT_IO            0x03
 
+#define PDP10_FMT_MASK          0x03
+
 /* Additional flags beyond the primary format.  */
 
 #define PDP10_FMT_A_UNUSED      0x04
