@@ -206,12 +206,26 @@ pdp10_read_word (struct disassemble_info *info, bfd_vma memaddr, uint64_t *dst)
 int
 print_insn_pdp10 (bfd_vma memaddr, struct disassemble_info *info)
 {
+  const struct pdp10_private_data *priv;
   uint64_t word;
+  unsigned int high13;
 
   parse_pdp10_disassembler_options (info);
+  priv = (struct cdp1802_private_data *) info->private_data;
 
   if (pdp10_read_word (info, memaddr, &word))
     return 0;
+  high13 = word >> (36 - 13);
+
+  i = priv->high13_to_index[high13];
+
+  if (i == -1)
+    {
+      info->fprintf_func (info->stream, ".long\t%0*" PRIo64 " ; invalid", 12, word);
+      return 8;
+    }
+
+  FIXME;
 
   /* TODO: use the opcode table here */
   info->fprintf_func (info->stream, ".long\t%0*" PRIo64, 12, word);
