@@ -209,9 +209,11 @@ print_insn_pdp10 (bfd_vma memaddr, struct disassemble_info *info)
   const struct pdp10_private_data *priv;
   uint64_t word;
   unsigned int high13;
+  int i;
+  unsigned int ac;
 
   parse_pdp10_disassembler_options (info);
-  priv = (struct cdp1802_private_data *) info->private_data;
+  priv = (struct pdp10_private_data *) info->private_data;
 
   if (pdp10_read_word (info, memaddr, &word))
     return 0;
@@ -225,9 +227,33 @@ print_insn_pdp10 (bfd_vma memaddr, struct disassemble_info *info)
       return 8;
     }
 
-  FIXME;
+  info->fprintf_func (info->stream, "%s ", pdp10_insns[i].name);
 
-  /* TODO: use the opcode table here */
-  info->fprintf_func (info->stream, ".long\t%0*" PRIo64, 12, word);
+  ac = (word >> 23) & 0x0F;
+  switch (pdp10_insns[i].format & PDP10_FMT_MASK)
+    {
+    case PDP10_FMT_BASIC:
+      if (ac == 0 && (pdp10_insns[i].format & PDP10_FMT_A_UNUSED))
+	break;
+      /*FALLTHROUGH*/
+    case PDP10_FMT_A_NONZERO:
+      info->fprintf_func (info->stream, "%o,", ac);
+      break;
+    case PDP10_FMT_A_OPCODE:
+      break;
+    case PDP10_FMT_IO:
+      /* FIXME */
+      break;
+    }
+
+  if (word & (1UL << 22))
+    info->fprintf_func (info->stream, "@");
+
+  info->fprintf_func (info->stream, "%lo", word & ((1UL << 18) - 1));
+
+  ac = (word >> 18) & 0x0F;
+  if (ac)
+    info->fprintf_func (info->stream, "(%o)", ac);
+
   return 8;
 }
