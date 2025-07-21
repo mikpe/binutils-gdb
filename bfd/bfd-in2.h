@@ -1810,6 +1810,8 @@ enum bfd_architecture
 #define bfd_mach_amdgcn_gfx1100 0x041
 #define bfd_mach_amdgcn_gfx1101 0x046
 #define bfd_mach_amdgcn_gfx1102 0x047
+  bfd_arch_pdp10,     /* PDP-10.  */
+#define bfd_mach_pdp10         0
   bfd_arch_last
   };
 
@@ -7473,6 +7475,19 @@ enum bfd_reloc_code_real
   BFD_RELOC_LARCH_TLS_LD_PCREL20_S2,
   BFD_RELOC_LARCH_TLS_GD_PCREL20_S2,
   BFD_RELOC_LARCH_TLS_DESC_PCREL20_S2,
+
+  /* PDP-10 relocations.  */
+  BFD_RELOC_PDP10_NONE,
+  BFD_RELOC_PDP10_GNU_VTINHERIT,
+  BFD_RELOC_PDP10_GNU_VTENTRY,
+  BFD_RELOC_PDP10_9,
+  BFD_RELOC_PDP10_18,
+  BFD_RELOC_PDP10_36,
+  BFD_RELOC_PDP10_IFIW,
+  BFD_RELOC_PDP10_EFIW,
+  BFD_RELOC_PDP10_BPTR,
+  BFD_RELOC_PDP10_HPTR,
+
   BFD_RELOC_UNUSED
 };
 typedef enum bfd_reloc_code_real bfd_reloc_code_real_type;
