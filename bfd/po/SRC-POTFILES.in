@@ -94,6 +94,7 @@ cpu-nds32.c
 cpu-nfp.c
 cpu-ns32k.c
 cpu-or1k.c
+cpu-pdp10.c
 cpu-pdp11.c
 cpu-pj.c
 cpu-powerpc.c
@@ -240,6 +241,7 @@ elf64-ia64-vms.c
 elf64-mips.c
 elf64-mmix.c
 elf64-nfp.c
+elf64-pdp10.c
 elf64-ppc.c
 elf64-ppc.h
 elf64-s390.c
