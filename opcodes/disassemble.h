@@ -77,6 +77,7 @@ extern int print_insn_nds32		(bfd_vma, disassemble_info *);
 extern int print_insn_nfp		(bfd_vma, disassemble_info *);
 extern int print_insn_ns32k		(bfd_vma, disassemble_info *);
 extern int print_insn_or1k		(bfd_vma, disassemble_info *);
+extern int print_insn_pdp10		(bfd_vma, disassemble_info *);
 extern int print_insn_pdp11		(bfd_vma, disassemble_info *);
 extern int print_insn_pj		(bfd_vma, disassemble_info *);
 extern int print_insn_pru		(bfd_vma, disassemble_info *);
