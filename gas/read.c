@@ -1652,7 +1652,7 @@ s_align (signed int arg, int bytes_p)
 	      fill_len = sizeof ab;
 	    }
 
-	  md_number_to_chars (ab, fill, fill_len);
+	  md_number_to_chars_progbits (ab, fill, fill_len);
 	  do_align (align, ab, fill_len, max);
 	}
     }
@@ -2432,7 +2432,7 @@ s_fill (int ignore ATTRIBUTE_UNUSED)
 	 bytes from a 4-byte expression and they forgot to sign
 	 extend.  */
 #define BSD_FILL_SIZE_CROCK_4 (4)
-      md_number_to_chars (p, fill,
+      md_number_to_chars_progbits (p, fill,
 			  (size > BSD_FILL_SIZE_CROCK_4
 			   ? BSD_FILL_SIZE_CROCK_4
 			   : size));
@@ -4707,7 +4707,7 @@ emit_expr_with_reloc (expressionS *exp,
 #endif
 
   /* If we have an integer, but the number of bytes is too large to
-     pass to md_number_to_chars, handle it as a bignum.  */
+     pass to md_number_to_chars_progbits, handle it as a bignum.  */
   if (op == O_constant && nbytes > sizeof (valueT))
     {
       extra_digit = -convert_to_bignum (exp);
@@ -4750,7 +4750,7 @@ emit_expr_with_reloc (expressionS *exp,
 		   (uint64_t) get, (uint64_t) use);
 	}
       /* Put bytes in right order.  */
-      md_number_to_chars (p, use, nbytes);
+      md_number_to_chars_progbits (p, use, nbytes);
     }
   else if (op == O_big)
     {
@@ -4799,7 +4799,7 @@ emit_expr_with_reloc (expressionS *exp,
 
       if (nbytes == 1)
 	{
-	  md_number_to_chars (p, generic_bignum[0], 1);
+	  md_number_to_chars_progbits (p, generic_bignum[0], 1);
 	  return;
 	}
       know (nbytes % CHARS_PER_LITTLENUM == 0);
@@ -4808,7 +4808,7 @@ emit_expr_with_reloc (expressionS *exp,
 	{
 	  while (nbytes > size)
 	    {
-	      md_number_to_chars (p, extra_digit, CHARS_PER_LITTLENUM);
+	      md_number_to_chars_progbits (p, extra_digit, CHARS_PER_LITTLENUM);
 	      nbytes -= CHARS_PER_LITTLENUM;
 	      p += CHARS_PER_LITTLENUM;
 	    }
@@ -4817,7 +4817,7 @@ emit_expr_with_reloc (expressionS *exp,
 	  while (size >= CHARS_PER_LITTLENUM)
 	    {
 	      --nums;
-	      md_number_to_chars (p, *nums, CHARS_PER_LITTLENUM);
+	      md_number_to_chars_progbits (p, *nums, CHARS_PER_LITTLENUM);
 	      size -= CHARS_PER_LITTLENUM;
 	      p += CHARS_PER_LITTLENUM;
 	    }
@@ -4827,7 +4827,7 @@ emit_expr_with_reloc (expressionS *exp,
 	  nums = generic_bignum;
 	  while (size >= CHARS_PER_LITTLENUM)
 	    {
-	      md_number_to_chars (p, *nums, CHARS_PER_LITTLENUM);
+	      md_number_to_chars_progbits (p, *nums, CHARS_PER_LITTLENUM);
 	      ++nums;
 	      size -= CHARS_PER_LITTLENUM;
 	      p += CHARS_PER_LITTLENUM;
@@ -4836,7 +4836,7 @@ emit_expr_with_reloc (expressionS *exp,
 
 	  while (nbytes >= CHARS_PER_LITTLENUM)
 	    {
-	      md_number_to_chars (p, extra_digit, CHARS_PER_LITTLENUM);
+	      md_number_to_chars_progbits (p, extra_digit, CHARS_PER_LITTLENUM);
 	      nbytes -= CHARS_PER_LITTLENUM;
 	      p += CHARS_PER_LITTLENUM;
 	    }
