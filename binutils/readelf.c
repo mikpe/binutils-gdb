@@ -5561,6 +5561,10 @@ get_machine_flags (Filedata * filedata, unsigned e_flags, unsigned e_machine)
 	case EM_LOONGARCH:
 	  out = decode_LOONGARCH_machine_flags (out, e_flags);
 	  break;
+
+	case EM_PDP10:
+	  /* PDP10: TBD */
+	  break;
 	}
     }
 
