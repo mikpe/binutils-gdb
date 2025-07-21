@@ -774,6 +774,7 @@
 					/*   note name must be "LINUX".  */
 #define NT_LOONGARCH_HW_WATCH   0xa06	/* LoongArch hardware watchpoint registers */
 					/*   note name must be "LINUX".  */
+/* TODO: PDP10 TBD */
 #define NT_RISCV_CSR    0x900		/* RISC-V Control and Status Registers */
 					/*   note name must be "LINUX".  */
 #define NT_SIGINFO	0x53494749	/* Fields of siginfo_t.  */
