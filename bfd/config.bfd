@@ -208,6 +208,7 @@ microblaze*)	 targ_archs=bfd_microblaze_arch ;;
 mips*)		 targ_archs=bfd_mips_arch ;;
 nds32*)		 targ_archs=bfd_nds32_arch ;;
 or1k*|or1knd*)	 targ_archs=bfd_or1k_arch ;;
+pdp10*)		 targ_archs=bfd_pdp10_arch ;;
 pdp11*)		 targ_archs=bfd_pdp11_arch ;;
 pj*)		 targ_archs="bfd_pj_arch bfd_i386_arch";;
 powerpc*)	 targ_archs="bfd_rs6000_arch bfd_powerpc_arch" ;;
@@ -1070,6 +1071,12 @@ case "${targ}" in
   or1knd-*-elf | or1knd-*-linux* | or1knd-*-rtems*)
     targ_defvec=or1k_elf32_vec
     ;;
+
+#ifdef BFD64
+  pdp10-*-elf)
+    targ_defvec=pdp10_elf64_vec
+    ;;
+#endif
 
   pdp11-*-*)
     targ_defvec=pdp11_aout_vec

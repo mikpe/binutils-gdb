@@ -837,6 +837,7 @@ extern const bfd_target ns32k_aout_pc532mach_vec;
 extern const bfd_target ns32k_aout_pc532nbsd_vec;
 extern const bfd_target or1k_elf32_vec;
 extern const bfd_target pdb_vec;
+extern const bfd_target pdp10_elf64_vec;
 extern const bfd_target pdp11_aout_vec;
 extern const bfd_target pef_vec;
 extern const bfd_target pef_xlib_vec;
@@ -1218,6 +1219,10 @@ static const bfd_target * const _bfd_target_vector[] =
 	&or1k_elf32_vec,
 
 	&pdb_vec,
+
+#ifdef BFD64
+	&pdp10_elf64_vec,
+#endif
 
 	&pdp11_aout_vec,
 
