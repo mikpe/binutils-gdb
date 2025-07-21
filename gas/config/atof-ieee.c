@@ -837,7 +837,7 @@ ieee_md_atof (int type,
     {
       for (wordP = words; prec--;)
 	{
-	  md_number_to_chars (litP, *wordP++, sizeof (LITTLENUM_TYPE));
+	  md_number_to_chars_progbits (litP, *wordP++, sizeof (LITTLENUM_TYPE));
 	  litP += sizeof (LITTLENUM_TYPE);
 	}
     }
@@ -845,7 +845,7 @@ ieee_md_atof (int type,
     {
       for (wordP = words + prec; prec--;)
 	{
-	  md_number_to_chars (litP, *--wordP, sizeof (LITTLENUM_TYPE));
+	  md_number_to_chars_progbits (litP, *--wordP, sizeof (LITTLENUM_TYPE));
 	  litP += sizeof (LITTLENUM_TYPE);
 	}
     }
