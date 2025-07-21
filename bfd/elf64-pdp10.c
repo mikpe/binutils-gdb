@@ -628,7 +628,17 @@ pdp10_relocate_section (bfd *output_bfd,
 					 howto, 0, contents);
 
       if (bfd_link_relocatable (info))
-	continue;
+	{
+#if 0 /* TODO: some targets do this, some do not. */
+	  /* This is a relocatable link.  We don't have to change
+	     anything, unless the reloc is against a section symbol,
+	     in which case we have to adjust according to where the
+	     section symbol winds up in the output section.  */
+	  if (sym != NULL && ELF_ST_TYPE (sym->st_info) == STT_SECTION)
+	    rel->r_addend += sec->output_offset;
+#endif
+	  continue;
+	}
 
       r = _bfd_final_link_relocate (howto, input_bfd, input_section,
 				    contents, rel->r_offset,
