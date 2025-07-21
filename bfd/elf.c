@@ -10787,6 +10787,8 @@ elfcore_grok_loongarch_lasx (bfd *abfd, Elf_Internal_Note *note)
   return elfcore_make_note_pseudosection (abfd, NOTE_PSEUDO_SECTION_LOONGARCH_LASX, note);
 }
 
+/* TODO: PDP10 TBD */
+
 #if defined (HAVE_PRPSINFO_T)
 typedef prpsinfo_t   elfcore_psinfo_t;
 #if defined (HAVE_PRPSINFO32_T)		/* Sparc64 cross Sparc32 */
@@ -11257,6 +11259,36 @@ elfcore_grok_note (bfd *abfd, Elf_Internal_Note *note)
 	return elfcore_grok_riscv_csr (abfd, note);
       else
 	return true;
+
+    case NT_LARCH_CPUCFG:
+      if (note->namesz == 6
+	  && strcmp (note->namedata, "LINUX") == 0)
+	return elfcore_grok_loongarch_cpucfg (abfd, note);
+      else
+	return true;
+
+    case NT_LARCH_LBT:
+      if (note->namesz == 6
+	  && strcmp (note->namedata, "LINUX") == 0)
+	return elfcore_grok_loongarch_lbt (abfd, note);
+      else
+	return true;
+
+    case NT_LARCH_LSX:
+      if (note->namesz == 6
+	  && strcmp (note->namedata, "LINUX") == 0)
+	return elfcore_grok_loongarch_lsx (abfd, note);
+      else
+	return true;
+
+    case NT_LARCH_LASX:
+      if (note->namesz == 6
+	  && strcmp (note->namedata, "LINUX") == 0)
+	return elfcore_grok_loongarch_lasx (abfd, note);
+      else
+	return true;
+
+    /* TODO: PDP10 TBD */
 
     case NT_PRPSINFO:
     case NT_PSINFO:
@@ -12937,6 +12969,8 @@ elfcore_write_loongarch_lasx (bfd *abfd,
 			     loongarch_lasx, size);
 }
 
+/* TODO: PDP10 TBD */
+
 /* Write the buffer of csr values in CSRS (length SIZE) into the note
    buffer BUF and update *BUFSIZ.  ABFD is the bfd the note is being
    written into.  Return a pointer to the new start of the note buffer, to
@@ -13001,6 +13035,7 @@ elfcore_write_register_note (bfd *abfd,
       { NOTE_PSEUDO_SECTION_LOONGARCH_LASX,   elfcore_write_loongarch_lasx},
       { NOTE_PSEUDO_SECTION_LOONGARCH_LBT,    elfcore_write_loongarch_lbt},
       { NOTE_PSEUDO_SECTION_LOONGARCH_LSX,    elfcore_write_loongarch_lsx},
+      /* TODO: PDP10 TBD */
       { NOTE_PSEUDO_SECTION_PPC_DSCR,         elfcore_write_ppc_dscr},
       { NOTE_PSEUDO_SECTION_PPC_EBB,          elfcore_write_ppc_ebb},
       { NOTE_PSEUDO_SECTION_PPC_PMU,          elfcore_write_ppc_pmu},
