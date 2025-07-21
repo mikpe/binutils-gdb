@@ -220,6 +220,8 @@ TARGET32_LIBOPCODES_CFILES = \
 	or1k-dis.c \
 	or1k-ibld.c \
 	or1k-opc.c \
+	pdp10-dis.c \
+	pdp10-opc.c \
 	pdp11-dis.c \
 	pdp11-opc.c \
 	pj-dis.c \
