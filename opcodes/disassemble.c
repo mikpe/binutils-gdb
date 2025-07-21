@@ -76,6 +76,7 @@
 #define ARCH_nds32
 #define ARCH_ns32k
 #define ARCH_or1k
+#define ARCH_pdp10
 #define ARCH_pdp11
 #define ARCH_pj
 #define ARCH_powerpc
@@ -352,6 +353,11 @@ disassembler (enum bfd_architecture a,
       disassemble = print_insn_or1k;
       break;
 #endif
+#ifdef ARCH_pdp10
+    case bfd_arch_pdp10:
+      disassemble = print_insn_pdp10;
+      break;
+#endif
 #ifdef ARCH_pdp11
     case bfd_arch_pdp11:
       disassemble = print_insn_pdp11;
@@ -556,6 +562,9 @@ disassembler_usage (FILE *stream ATTRIBUTE_UNUSED)
 #ifdef ARCH_nfp
   print_nfp_disassembler_options (stream);
 #endif
+#ifdef ARCH_pdp10
+  print_pdp10_disassembler_options (stream);
+#endif
 #ifdef ARCH_powerpc
   print_ppc_disassembler_options (stream);
 #endif
@@ -721,6 +730,11 @@ disassemble_init_for_target (struct disassemble_info * info)
       disassemble_init_nds32 (info);
       break;
  #endif
+#ifdef ARCH_pdp10
+    case bfd_arch_pdp10:
+      disassemble_init_pdp10 (info);
+      break;
+#endif
     default:
       break;
     }
