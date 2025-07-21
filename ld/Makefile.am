@@ -333,6 +333,7 @@ ALL_EMULATION_SOURCES = \
 	ends32elf_linux.c \
 	ens32knbsd.c \
 	epc532macha.c \
+	epdp10elf.c \
 	epdp11.c \
 	epjelf.c \
 	epjlelf.c \
