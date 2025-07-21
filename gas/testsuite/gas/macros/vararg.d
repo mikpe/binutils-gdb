@@ -2,6 +2,8 @@
 #name: macro vararg
 # darwin (mach-o) reverses relocs.
 #xfail: *-*-darwin*
+# pdp10 allocates two octets per nonet so the offsets are 2x the expected values
+#xfail: pdp10-*-*
 
 .*: +file format .*
 
