@@ -56,6 +56,7 @@ if test "${ac_default_ld_warn_rwx_segments}" = unset; then
     hppa*-*-* | \
     mips*-*-* | \
     microblaze*-*-* | \
+    pdp10-*-elf | \
     sparc*-*-* | \
     v850*-*-*)
       ac_default_ld_warn_rwx_segments=0
@@ -669,6 +670,8 @@ or1k-*-elf | or1knd-*-elf | or1k-*-rtems* | or1knd-*-rtems*)
 			targ_emul=elf32or1k
 			;;
 or1k-*-linux* | or1knd-*-linux*)	targ_emul=elf32or1k_linux
+			;;
+pdp10-*-elf)		targ_emul=pdp10elf
 			;;
 pdp11-*-*)		targ_emul=pdp11
 			targ_extra_ofiles=
