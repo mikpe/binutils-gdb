@@ -146,6 +146,7 @@ ALL_MACHINES = \
 	cpu-nfp.lo \
 	cpu-ns32k.lo \
 	cpu-or1k.lo \
+	cpu-pdp10.lo \
 	cpu-pdp11.lo \
 	cpu-pj.lo \
 	cpu-powerpc.lo \
@@ -229,6 +230,7 @@ ALL_MACHINES_CFILES = \
 	cpu-nfp.c \
 	cpu-ns32k.c \
 	cpu-or1k.c \
+	cpu-pdp10.c \
 	cpu-pdp11.c \
 	cpu-pj.c \
 	cpu-powerpc.c \
@@ -559,6 +561,7 @@ BFD64_BACKENDS = \
 	elf64-mips.lo \
 	elf64-mmix.lo \
 	elf64-nfp.lo \
+	elf64-pdp10.lo \
 	elf64-ppc.lo \
 	elf64-riscv.lo \
 	elf64-s390.lo \
@@ -609,6 +612,7 @@ BFD64_BACKENDS_CFILES = \
 	elf64-mips.c \
 	elf64-mmix.c \
 	elf64-nfp.c \
+	elf64-pdp10.c \
 	elf64-ppc.c \
 	elf64-s390.c \
 	elf64-sparc.c \

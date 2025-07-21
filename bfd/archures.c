@@ -574,6 +574,8 @@ DESCRIPTION
 .#define bfd_mach_amdgcn_gfx1100 0x041
 .#define bfd_mach_amdgcn_gfx1101 0x046
 .#define bfd_mach_amdgcn_gfx1102 0x047
+.  bfd_arch_pdp10,     {* PDP-10.  *}
+.#define bfd_mach_pdp10		0
 .  bfd_arch_last
 .  };
 */
@@ -679,6 +681,7 @@ extern const bfd_arch_info_type bfd_nds32_arch;
 extern const bfd_arch_info_type bfd_nfp_arch;
 extern const bfd_arch_info_type bfd_ns32k_arch;
 extern const bfd_arch_info_type bfd_or1k_arch;
+extern const bfd_arch_info_type bfd_pdp10_arch;
 extern const bfd_arch_info_type bfd_pdp11_arch;
 extern const bfd_arch_info_type bfd_pj_arch;
 extern const bfd_arch_info_type bfd_powerpc_archs[];
@@ -767,6 +770,7 @@ static const bfd_arch_info_type * const bfd_archures_list[] =
     &bfd_nfp_arch,
     &bfd_ns32k_arch,
     &bfd_or1k_arch,
+    &bfd_pdp10_arch,
     &bfd_pdp11_arch,
     &bfd_powerpc_arch,
     &bfd_pru_arch,
