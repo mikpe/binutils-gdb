@@ -144,6 +144,7 @@
 #include "elf/nfp.h"
 #include "elf/nios2.h"
 #include "elf/or1k.h"
+#include "elf/pdp10.h"
 #include "elf/pj.h"
 #include "elf/ppc.h"
 #include "elf/ppc64.h"
@@ -1278,6 +1279,7 @@ guess_is_rela (unsigned int e_machine)
     case EM_NDS32:
     case EM_NIOS32:
     case EM_OR1K:
+    case EM_PDP10:
     case EM_PPC64:
     case EM_PPC:
     case EM_TI_PRU:
@@ -2641,6 +2643,10 @@ dump_relocations (Filedata *          filedata,
 
 	case EM_AMDGPU:
 	  rtype = elf_amdgpu_reloc_type (type);
+	  break;
+
+	case EM_PDP10:
+	  rtype = elf_pdp10_reloc_type (type);
 	  break;
 	}
 
@@ -15958,6 +15964,8 @@ is_32bit_abs_reloc (Filedata * filedata, unsigned int reloc_type)
       return (reloc_type == 1 /* R_PARISC_DIR32.  */
 	      || reloc_type == 2 /* R_PARISC_DIR21L.  */
 	      || reloc_type == 41); /* R_PARISC_SECREL32.  */
+    case EM_PDP10:
+      return reloc_type == 5; /* R_PDP10_32.  */
     case EM_PJ:
     case EM_PJ_OLD:
       return reloc_type == 1; /* R_PJ_DATA_DIR32.  */
@@ -16136,6 +16144,8 @@ is_64bit_abs_reloc (Filedata * filedata, unsigned int reloc_type)
       return reloc_type == 2;      /* R_LARCH_64 */
     case EM_PARISC:
       return reloc_type == 80; /* R_PARISC_DIR64.  */
+    case EM_PDP10:
+      return reloc_type == 6; /* R_PDP10_64.  */
     case EM_PPC64:
       return reloc_type == 38; /* R_PPC64_ADDR64.  */
     case EM_RISCV:
@@ -16538,6 +16548,7 @@ is_none_reloc (Filedata * filedata, unsigned int reloc_type)
     case EM_NIOS32:  /* R_NIOS_NONE.  */
     case EM_OR1K:    /* R_OR1K_NONE. */
     case EM_PARISC:  /* R_PARISC_NONE.  */
+    case EM_PDP10:   /* R_PDP10_NONE.  */
     case EM_PPC64:   /* R_PPC64_NONE.  */
     case EM_PPC:     /* R_PPC_NONE.  */
     case EM_RISCV:   /* R_RISCV_NONE.  */
