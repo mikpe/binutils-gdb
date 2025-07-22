@@ -111,8 +111,8 @@ cdp1802_tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixp)
       return NULL;
     }
 
-  reloc = XNEW (arelent);
-  reloc->sym_ptr_ptr = XNEW (asymbol *);
+  reloc = notes_alloc (sizeof (arelent));
+  reloc->sym_ptr_ptr = notes_alloc (sizeof (asymbol *));
   *reloc->sym_ptr_ptr = symbol_get_bfdsym (fixp->fx_addsy);
   reloc->address = fixp->fx_frag->fr_address + fixp->fx_where;
   reloc->addend = fixp->fx_offset;
@@ -126,7 +126,7 @@ cdp1802_tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixp)
 long
 cdp1802_md_pcrel_from_section (fixS *fixp, segT sec)
 {
-  if (fixp->fx_addsy != (symbolS *) NULL
+  if (fixp->fx_addsy != NULL
       && (!S_IS_DEFINED (fixp->fx_addsy)
 	  || S_GET_SEGMENT (fixp->fx_addsy) != sec))
     {
@@ -373,11 +373,11 @@ cdp1802_md_apply_fix (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
   unsigned char *where = (unsigned char *) fixP->fx_frag->fr_literal + fixP->fx_where;
   long value = *valP;
 
-  if (fixP->fx_addsy == (symbolS *) NULL)
+  if (fixP->fx_addsy == NULL)
     fixP->fx_done = 1;
 
   /* We don't actually support subtracting a symbol.  */
-  if (fixP->fx_subsy != (symbolS *) NULL)
+  if (fixP->fx_subsy != NULL)
     as_bad_subtract (fixP);
 
   switch (fixP->fx_r_type)
