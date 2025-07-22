@@ -148,7 +148,7 @@ cdp1802_md_section_align (segT segment ATTRIBUTE_UNUSED, valueT size)
 }
 
 const pseudo_typeS cdp1802_md_pseudo_table[] = {
-  {NULL, 0, 0}
+  { NULL, NULL, 0 }
 };
 
 static char *
