@@ -193,26 +193,26 @@ const pseudo_typeS pdp10_md_pseudo_table[] = {
      need to reimplement stringer to DTRT.  */
   /* TODO: Check that values don't overflow 36/18/9 bits, as appropriate.  */
   /* TODO: Drop md_number_to_chars_progbits, reimplement cons properly.  */
-  {"ascii", stringer, (8*2)+0},
-  {"asciz", stringer, (8*2)+1},
-  {"byte", cons, 1*2},
-  {"dc", cons, 2*2},
+  { "ascii", stringer, (8*2)+0 },
+  { "asciz", stringer, (8*2)+1 },
+  { "byte", cons, 1*2 },
+  { "dc", cons, 2*2 },
   /* dc.a gets the correct nbytes from TC_ADDRESS_BYTES.  */
-  {"dc.b", cons, 1*2},
-  {"dc.l", cons, 4*2},
-  {"dc.w", cons, 2*2},
-  {"hword", cons, 2*2},
-  {"int", cons, 4*2},
-  {"long", cons, 4*2},
-  {"octa", cons, 16*2},
-  {"quad", cons, 8*2},
-  {"short", cons, 2*2},
-  {"string", stringer, (8*2)+1},
-  {"word", cons, 2*2},
-  {"2byte", cons, 2*2},
-  {"4byte", cons, 4*2},
-  {"8byte", cons, 8*2},
-  {NULL, 0, 0}
+  { "dc.b", cons, 1*2} ,
+  { "dc.l", cons, 4*2 },
+  { "dc.w", cons, 2*2 },
+  { "hword", cons, 2*2 },
+  { "int", cons, 4*2 },
+  { "long", cons, 4*2 },
+  { "octa", cons, 16*2 },
+  { "quad", cons, 8*2 },
+  { "short", cons, 2*2 },
+  { "string", stringer, (8*2)+1 },
+  { "word", cons, 2*2 },
+  { "2byte", cons, 2*2 },
+  { "4byte", cons, 4*2 },
+  { "8byte", cons, 8*2 },
+  { NULL, NULL, 0 }
 };
 
 static void
