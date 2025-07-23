@@ -48,8 +48,11 @@ pdp10_md_show_usage (FILE *fp ATTRIBUTE_UNUSED)
 {
 }
 
+/* Currently selected CPU models.  */
+static pdp10_cpu_models_t selected_cpu_models = PDP10_KL10_271up;
+
 /* Map from insn name to array of pointers to insns with that name.
-   Use selected cpu models to disambiguate.  */
+   Use selected CPU models to disambiguate.  */
 static htab_t insn_hash = NULL;
 
 void
@@ -81,6 +84,49 @@ pdp10_md_begin (void)
 	}
       str_hash_insert (insn_hash, pdp10_insns[i].name, arr, 1);
     }
+}
+
+static const struct pdp10_insn *
+pdp10_lookup_insn_1 (const char *str)
+{
+  const struct pdp10_insn **arr, *insn;
+
+  arr = str_hash_find (insn_hash, str);
+
+  if (arr == NULL)
+    {
+      as_bad (_("Unknown instruction '%s'"), str);
+      return NULL;
+    }
+
+  insn = NULL;
+  for (; *arr != NULL; ++arr)
+    if (((*arr)->models & selected_cpu_models) != 0)
+      {
+	if (insn != NULL)
+	  {
+	    as_bad (_("Ambiguous instruction '%s'"), str);
+	    return NULL;
+	  }
+	insn = *arr;
+      }
+
+  if (insn == NULL)
+    as_bad (_("Unavailable instruction '%s'"), str);
+  return insn;
+}
+
+static const struct pdp10_insn *
+pdp10_lookup_insn (char *op_begin, char *op_end)
+{
+  const struct pdp10_insn *insn;
+  char c;
+
+  c = *op_end;
+  *op_end = '\0';
+  insn = pdp10_lookup_insn_1 (op_begin);
+  *op_end = c;
+  return insn;
 }
 
 /* Floating-point numerals.  */
@@ -215,6 +261,51 @@ const pseudo_typeS pdp10_md_pseudo_table[] = {
   { NULL, NULL, 0 }
 };
 
+static char *
+skip_blanks (char *str)
+{
+  char c;
+
+  while (c = *str, c == ' ' || c == '\t')
+    ++str;
+
+  return str;
+}
+
+static char *
+skip_non_blanks (char *str)
+{
+  char c;
+
+  while (c = *str, !(c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\0'))
+    ++str;
+
+  return str;
+}
+
+static char *
+pdp10_expression (char *str, expressionS *exp)
+{
+  char *save_ilp;
+
+  /* TODO: handle %<reloc>(...) */
+
+  save_ilp = input_line_pointer;
+  input_line_pointer = str;
+  expression (exp);
+
+  if (exp->X_op == O_illegal || exp->X_op == O_absent)
+    {
+      as_bad (_("Expected expression, got '%s'"), str);
+      return NULL;
+    }
+
+  str = input_line_pointer;
+  input_line_pointer = save_ilp;
+
+  return str;
+}
+
 static void
 pdp10_emit_word (unsigned char *to, uint64_t word)
 {
@@ -226,17 +317,157 @@ pdp10_emit_word (unsigned char *to, uint64_t word)
 void
 pdp10_md_assemble (char *str)
 {
-  /* FIXME: this is utterly incomplete  */
-  /* TODO: use opcodes instead  */
-  if (strcmp (str, "nop") == 0)
+  expressionS opnd;
+  bool lparen;
+  char *op_begin;
+  const struct pdp10_insn *insn;
+  uint64_t word;
+  unsigned char *frag_ptr;
+
+  memset (&opnd, 0, sizeof opnd);
+  opnd.X_op = O_absent;
+  lparen = false;
+
+  op_begin = str = skip_blanks (str);
+  str = skip_non_blanks (str);
+  insn = pdp10_lookup_insn (op_begin, str);
+  if (!insn)
+    return;
+  /* TODO: handle extended instructions */
+  if (insn->format & PDP10_FMT_EXTENDED)
     {
-      /* The preferred NOP is a JFCL with zeros in the A, I, X, and Y fields.  */
-      uint64_t word = 0255000000000ULL;
-      unsigned char *to = (unsigned char *) frag_more (8);
-      pdp10_emit_word (to, word);
+      as_bad (_("Extended instructions are not yet supported"));
       return;
     }
-  as_bad (_("Not yet implemented: `%s'"), str);
+
+  word = (uint64_t) insn->high13 << (36 - 13);
+
+  /* Do we have an operand?  We don't yet know if it's
+     the AC/DEV, Y, or X field.  */
+  str = skip_blanks (str);
+  if (*str && *str != '@')
+    {
+      char *opstr = str;
+
+      lparen = *str == '(';
+      str = pdp10_expression (str, &opnd);
+      if (!str)
+	return;
+
+      /* Was it the AC/DEV field?  */
+      str = skip_blanks (str);
+      if (*str == ',')
+	{
+	  ++str;
+	  if (opnd.X_op != O_constant)
+	    {
+	      as_bad (_("Expected constant, got '%s'"), opstr);
+	      return;
+	    }
+	  switch (insn->format & PDP10_FMT_MASK)
+	    {
+	    case PDP10_FMT_A_OPCODE:
+	      as_bad (_("Instruction cannot have an AC/DEV operand"));
+	      return;
+	    case PDP10_FMT_IO:
+	      /* DEV, 7 middle bits of high 13 bits */
+	      if ((uint64_t) opnd.X_add_number > 127)
+		{
+		  as_bad (_("DEV out of range, got %lu"), (uint64_t) opnd.X_add_number);
+		  return;
+		}
+	      word |= (uint64_t) (opnd.X_add_number & 127) << (36 - 10);
+	      break;
+	    default:
+	      /* AC, 4 low bits of high 13 bits */
+	      if ((uint64_t) opnd.X_add_number > 15)
+		{
+		  as_bad (_("AC out of range, got %lu"), (uint64_t) opnd.X_add_number);
+		  return;
+		}
+	      word |= (uint64_t) (opnd.X_add_number & 15) << (36 - 13);
+	      break;
+	    }
+	  memset (&opnd, 0, sizeof opnd);
+	  opnd.X_op = O_absent;
+	  lparen = false;
+	}
+    }
+
+  if (opnd.X_op == O_absent)
+    {
+      /* Should the indirect bit be set?  */
+      str = skip_blanks (str);
+      if (*str == '@')
+	{
+	  ++str;
+	  word |= (uint64_t) 1 << (36 - 14);
+	}
+
+      /* Do we have a Y or X operand?  */
+      str = skip_blanks (str);
+      if (*str)
+	{
+	  lparen = *str == '(';
+	  str = pdp10_expression (str, &opnd);
+	  if (!str)
+	    return;
+	}
+    }
+
+  /* Do we have an (X) operand?  If so, previous operand, if any, was Y.  */
+  str = skip_blanks (str);
+  if (*str == '(')
+    {
+      expressionS opndx;
+      char *opstr = str;
+
+      memset (&opndx, 0, sizeof opndx);
+      str = pdp10_expression (str, &opndx);
+      if (!str)
+	return;
+      if (opndx.X_op != O_constant)
+	{
+	  as_bad (_("Expected (<AC>), got '%s'"), opstr);
+	  return;
+	}
+      if ((uint64_t) opndx.X_add_number > 15)
+	{
+	  as_bad (_("AC out of range, got %lu"), (uint64_t) opndx.X_add_number);
+	  return;
+	}
+      word |= (uint64_t) (opndx.X_add_number & 15) << 18;
+    }
+  /* Otherwise, if previous operand looks like (X), then classify it so.  */
+  else if (opnd.X_op == O_constant
+	   && lparen
+	   && (uint64_t) opnd.X_add_number < 16)
+    {
+      word |= (uint64_t) (opnd.X_add_number & 15) << 18;
+
+      memset (&opnd, 0, sizeof opnd);
+      opnd.X_op = O_absent;
+      lparen = false;
+    }
+
+  str = skip_blanks (str);
+  if (*str)
+    {
+      as_bad (_("Junk at end of line: '%s'"), str);
+      return;
+    }
+
+  dwarf2_emit_insn (0);
+  frag_ptr = (unsigned char *) frag_more (8);
+
+  pdp10_emit_word (frag_ptr, word);
+
+  if (opnd.X_op != O_absent)
+    {
+      bfd_reloc_code_real_type r_type = BFD_RELOC_32;
+      fix_new_exp (frag_now, (frag_ptr + 4) - (unsigned char *) frag_now->fr_literal,
+		   4, &opnd, false, r_type);
+    }
 }
 
 symbolS *
