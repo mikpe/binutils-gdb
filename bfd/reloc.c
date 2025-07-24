@@ -365,6 +365,12 @@ CODE_FRAGMENT
 .
 .  {* The textual name of the relocation type.  *}
 .  const char *name;
+.
+.  {* If these fields are non null, then the supplied functions are
+.     called rather than the normal functions.  This allow reformatting
+.     relocated data without duplicating generic logic.  *}
+.  bfd_vma (*read_reloc) (bfd *, bfd_byte *, reloc_howto_type *);
+.  void (*write_reloc) (bfd *, bfd_vma, bfd_byte *, reloc_howto_type *);
 .};
 .
 */
@@ -379,11 +385,15 @@ DESCRIPTION
 
 .#define HOWTO_INSTALL_ADDEND 0
 .#define HOWTO_RSIZE(sz) ((sz) < 0 ? -(sz) : (sz))
-.#define HOWTO(type, right, size, bits, pcrel, left, ovf, func, name,	\
-.              inplace, src_mask, dst_mask, pcrel_off)			\
+.#define HOWTO15(type, right, size, bits, pcrel, left, ovf, func, name,	\
+.                inplace, src_mask, dst_mask, pcrel_off, read_reloc, write_reloc) \
 .  { (unsigned) type, HOWTO_RSIZE (size), bits, right, left, ovf,	\
 .    size < 0, pcrel, inplace, pcrel_off, HOWTO_INSTALL_ADDEND,		\
-.    src_mask, dst_mask, func, name }
+.    src_mask, dst_mask, func, name, read_reloc, write_reloc }
+.#define HOWTO(type, right, size, bits, pcrel, left, ovf, func, name,	\
+.              inplace, src_mask, dst_mask, pcrel_off)			\
+.  HOWTO15 (type, right, size, bits, pcrel, left, ovf, func, name,      \
+.           inplace, src_mask, dst_mask, pcrel_off, NULL, NULL)
 
 DESCRIPTION
 	This is used to fill in an empty howto entry in an array.
@@ -539,6 +549,9 @@ bfd_reloc_offset_in_range (reloc_howto_type *howto,
 static bfd_vma
 read_reloc (bfd *abfd, bfd_byte *data, reloc_howto_type *howto)
 {
+  if (howto->read_reloc)
+    return howto->read_reloc (abfd, data, howto);
+
   switch (bfd_get_reloc_size (howto))
     {
     case 0:
@@ -573,6 +586,12 @@ read_reloc (bfd *abfd, bfd_byte *data, reloc_howto_type *howto)
 static void
 write_reloc (bfd *abfd, bfd_vma val, bfd_byte *data, reloc_howto_type *howto)
 {
+  if (howto->write_reloc)
+    {
+      howto->write_reloc (abfd, val, data, howto);
+      return;
+    }
+
   switch (bfd_get_reloc_size (howto))
     {
     case 0:
