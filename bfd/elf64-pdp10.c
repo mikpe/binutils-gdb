@@ -25,6 +25,87 @@
 #include "elf/pdp10.h"
 #include "libiberty.h"
 
+static unsigned int
+pdp10_bfd_get_9 (bfd *abfd ATTRIBUTE_UNUSED, bfd_byte *addr)
+{
+  unsigned char hi, lo;
+
+  hi = bfd_get_8 (abfd, addr);
+  lo = bfd_get_8 (abfd, addr + 1);
+  return ((hi & 1) << 8) | lo;
+}
+
+static void
+pdp10_bfd_put_9 (bfd *abfd ATTRIBUTE_UNUSED, bfd_vma val, bfd_byte *addr)
+{
+  bfd_put_8 (abfd, (val >> 8) & 1, addr);
+  bfd_put_8 (abfd, val & 0xff, addr + 1);
+}
+
+static uint32_t
+pdp10_bfd_get_18 (bfd *abfd, bfd_byte *addr)
+{
+  unsigned int hi, lo;
+
+  hi = pdp10_bfd_get_9 (abfd, addr);
+  lo = pdp10_bfd_get_9 (abfd, addr + 2);
+  return ((uint32_t) hi << 9) | lo;
+}
+
+static void
+pdp10_bfd_put_18 (bfd *abfd, bfd_vma val, bfd_byte *addr)
+{
+  pdp10_bfd_put_9 (abfd, val >> 9, addr);
+  pdp10_bfd_put_9 (abfd, val, addr + 2);
+}
+
+static uint64_t
+pdp10_bfd_get_36 (bfd *abfd, bfd_byte *addr)
+{
+  uint32_t hi, lo;
+
+  hi = pdp10_bfd_get_18 (abfd, addr);
+  lo = pdp10_bfd_get_18 (abfd, addr + 4);
+  return ((uint64_t) hi << 18) | lo;
+}
+
+static void
+pdp10_bfd_put_36 (bfd *abfd, bfd_vma val, bfd_byte *addr)
+{
+  pdp10_bfd_put_18 (abfd, val >> 18, addr);
+  pdp10_bfd_put_18 (abfd, val, addr + 4);
+}
+
+static bfd_vma
+pdp10_read_reloc (bfd *abfd, bfd_byte *addr, reloc_howto_type *howto)
+{
+  switch (bfd_get_reloc_size (howto))
+    {
+    case 4:
+      return pdp10_bfd_get_18 (abfd, addr);
+    case 8:
+      return pdp10_bfd_get_36 (abfd, addr);
+    default:
+      abort ();
+    }
+}
+
+static void
+pdp10_write_reloc (bfd *abfd, bfd_vma val, bfd_byte *addr, reloc_howto_type *howto)
+{
+  switch (bfd_get_reloc_size (howto))
+    {
+    case 4:
+      pdp10_bfd_put_18 (abfd, val, addr);
+      break;
+    case 8:
+      pdp10_bfd_put_36 (abfd, val, addr);
+      break;
+    default:
+      abort ();
+    }
+}
+
 /* The relocation "howto" table.  The elements must have the same
    indices as their R_PDP10_ numbers in include/elf/pdp10.h.  */
 static reloc_howto_type pdp10_elf_howto_table[] =
@@ -75,7 +156,7 @@ static reloc_howto_type pdp10_elf_howto_table[] =
 	 false),		/* pcrel_offset */
 
   /* A 64 (really 36) bit reference to a symbol.  */
-  HOWTO (R_PDP10_ABS64,		/* type */
+  HOWTO15 (R_PDP10_ABS64,		/* type */
 	 0,			/* rightshift */
 	 8,			/* size */
 	 64,			/* bitsize */
@@ -87,7 +168,9 @@ static reloc_howto_type pdp10_elf_howto_table[] =
 	 false,			/* partial_inplace */
 	 0x0000000000000000,	/* src_mask */
 	 0xffffffffffffffff,	/* dst_mask */
-	 false),		/* pcrel_offset */
+	 false,			/* pcrel_offset */
+	 pdp10_read_reloc,	/* read_reloc */
+	 pdp10_write_reloc),	/* write_reloc */
 };
 
 static reloc_howto_type *
