@@ -3228,15 +3228,25 @@ struct reloc_howto_struct
 
   /* The textual name of the relocation type.  */
   const char *name;
+
+  /* If these fields are non null, then the supplied functions are
+     called rather than the normal functions.  This allow reformatting
+     relocated data without duplicating generic logic.  */
+  bfd_vma (*read_reloc) (bfd *, bfd_byte *, reloc_howto_type *);
+  void (*write_reloc) (bfd *, bfd_vma, bfd_byte *, reloc_howto_type *);
 };
 
 #define HOWTO_INSTALL_ADDEND 0
 #define HOWTO_RSIZE(sz) ((sz) < 0 ? -(sz) : (sz))
-#define HOWTO(type, right, size, bits, pcrel, left, ovf, func, name,   \
-	      inplace, src_mask, dst_mask, pcrel_off)                  \
+#define HOWTO15(type, right, size, bits, pcrel, left, ovf, func, name, \
+		inplace, src_mask, dst_mask, pcrel_off, rr, wr)        \
   { (unsigned) type, HOWTO_RSIZE (size), bits, right, left, ovf,       \
     size < 0, pcrel, inplace, pcrel_off, HOWTO_INSTALL_ADDEND,         \
-    src_mask, dst_mask, func, name }
+    src_mask, dst_mask, func, name, rr, wr }
+#define HOWTO(type, right, size, bits, pcrel, left, ovf, func, name,   \
+	      inplace, src_mask, dst_mask, pcrel_off)                  \
+  HOWTO15 (type, right, size, bits, pcrel, left, ovf, func, name,      \
+	   inplace, src_mask, dst_mask, pcrel_off, NULL, NULL)
 #define EMPTY_HOWTO(C) \
   HOWTO ((C), 0, 1, 0, false, 0, complain_overflow_dont, NULL, \
 	 NULL, false, 0, 0, false)
