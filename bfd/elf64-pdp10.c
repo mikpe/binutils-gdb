@@ -488,19 +488,19 @@ pdp10_info_to_howto_rela (bfd *abfd ATTRIBUTE_UNUSED, arelent *cache_ptr, Elf_In
 static asection *
 pdp10_gc_mark_hook (asection *sec,
 		    struct bfd_link_info *info,
-		    Elf_Internal_Rela *rel,
+		    struct elf_reloc_cookie *cookie,
 		    struct elf_link_hash_entry *h,
-		    Elf_Internal_Sym *sym)
+		    unsigned int symndx)
 {
   if (h != NULL)
-    switch (ELF64_R_TYPE (rel->r_info))
+    switch (ELF64_R_TYPE (cookie->rel->r_info))
       {
       case R_PDP10_GNU_VTINHERIT:
       case R_PDP10_GNU_VTENTRY:
 	return NULL;
       }
 
-  return _bfd_elf_gc_mark_hook (sec, info, rel, h, sym);
+  return _bfd_elf_gc_mark_hook (sec, info, cookie, h, symndx);
 }
 
 /* Look through the relocs for a section during the first phase.
