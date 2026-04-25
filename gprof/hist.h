@@ -30,8 +30,8 @@ typedef struct histogram
   int *sample;           /* Histogram samples (shorts in the file!).  */
 } histogram;
 
-histogram *histograms;
-unsigned num_histograms;
+extern histogram *histograms;
+extern unsigned num_histograms;
 
 /* Scale factor converting samples to pc values:
    each sample covers HIST_SCALE bytes.  */

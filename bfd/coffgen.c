@@ -1959,6 +1959,7 @@ coff_print_symbol (bfd *abfd,
 		      break;
 		    }
 		    /* Otherwise fall through.  */
+                    __attribute((fallthrough));
 		case C_EXT:
 		  if (ISFCN (combined->u.syment.n_type))
 		    {
@@ -1977,6 +1978,7 @@ coff_print_symbol (bfd *abfd,
 			       llnos, next);
 		      break;
 		    }
+                    __attribute((fallthrough));
 		  /* Otherwise fall through.  */
 		default:
 		  fprintf (file, "AUX lnno %d size 0x%x tagndx %ld",
