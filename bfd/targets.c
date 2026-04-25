@@ -660,7 +660,6 @@ extern const bfd_target bfd_elf32_shvxworks_vec;
 extern const bfd_target bfd_elf32_sparc_vec;
 extern const bfd_target bfd_elf32_sparc_vxworks_vec;
 extern const bfd_target bfd_elf32_spu_vec;
-extern const bfd_target bfd_elf32_tms9900_vec;
 extern const bfd_target bfd_elf32_tradbigmips_vec;
 extern const bfd_target bfd_elf32_tradlittlemips_vec;
 extern const bfd_target bfd_elf32_us_cris_vec;
