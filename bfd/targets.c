@@ -835,6 +835,7 @@ extern const bfd_target nds32_elf32_le_vec;
 extern const bfd_target nds32_elf32_linux_be_vec;
 extern const bfd_target nds32_elf32_linux_le_vec;
 extern const bfd_target nfp_elf64_vec;
+extern const bfd_target nova_elf32_vec;
 extern const bfd_target ns32k_aout_pc532mach_vec;
 extern const bfd_target ns32k_aout_pc532nbsd_vec;
 extern const bfd_target or1k_elf32_vec;
@@ -1213,6 +1214,8 @@ static const bfd_target * const _bfd_target_vector[] =
 #ifdef BFD64
 	&nfp_elf64_vec,
 #endif
+
+	&nova_elf32_vec,
 
 	&ns32k_aout_pc532mach_vec,
 	&ns32k_aout_pc532nbsd_vec,

@@ -144,6 +144,7 @@ ALL_MACHINES = \
 	cpu-mt.lo \
 	cpu-nds32.lo \
 	cpu-nfp.lo \
+	cpu-nova.lo \
 	cpu-ns32k.lo \
 	cpu-or1k.lo \
 	cpu-pdp11.lo \
@@ -227,6 +228,7 @@ ALL_MACHINES_CFILES = \
 	cpu-mt.c \
 	cpu-nds32.c \
 	cpu-nfp.c \
+	cpu-nova.c \
 	cpu-ns32k.c \
 	cpu-or1k.c \
 	cpu-pdp11.c \
@@ -332,6 +334,7 @@ BFD32_BACKENDS = \
 	elf32-msp430.lo \
 	elf32-mt.lo \
 	elf32-nds32.lo \
+	elf32-nova.lo \
 	elf32-or1k.lo \
 	elf32-pj.lo \
 	elf32-ppc.lo \
@@ -467,6 +470,7 @@ BFD32_BACKENDS_CFILES = \
 	elf32-msp430.c \
 	elf32-mt.c \
 	elf32-nds32.c \
+	elf32-nova.c \
 	elf32-or1k.c \
 	elf32-pj.c \
 	elf32-ppc.c \

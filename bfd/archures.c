@@ -592,6 +592,8 @@ DESCRIPTION
 .#define bfd_mach_amdgcn_gfx1201         0x04e
 .#define bfd_mach_amdgcn_gfx12_5_generic 0x05b
 .#define bfd_mach_amdgcn_gfx1250         0x049
+.  bfd_arch_nova,     {* NOVA.  *}
+.#define bfd_mach_nova	0
 .  bfd_arch_last
 .  };
 */
@@ -695,6 +697,7 @@ extern const bfd_arch_info_type bfd_msp430_arch;
 extern const bfd_arch_info_type bfd_mt_arch;
 extern const bfd_arch_info_type bfd_nds32_arch;
 extern const bfd_arch_info_type bfd_nfp_arch;
+extern const bfd_arch_info_type bfd_nova_arch;
 extern const bfd_arch_info_type bfd_ns32k_arch;
 extern const bfd_arch_info_type bfd_or1k_arch;
 extern const bfd_arch_info_type bfd_pdp11_arch;
@@ -783,6 +786,7 @@ static const bfd_arch_info_type * const bfd_archures_list[] =
     &bfd_mt_arch,
     &bfd_nds32_arch,
     &bfd_nfp_arch,
+    &bfd_nova_arch,
     &bfd_ns32k_arch,
     &bfd_or1k_arch,
     &bfd_pdp11_arch,
