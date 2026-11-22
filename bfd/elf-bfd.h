@@ -592,6 +592,7 @@ enum elf_target_id
   WEBASSEMBLY_ELF_DATA,
   X86_64_ELF_DATA,
   XTENSA_ELF_DATA,
+  /* TODO: NOVA TBD */
   GENERIC_ELF_DATA
 };
 
@@ -3181,6 +3182,7 @@ extern char *elfcore_write_loongarch_lsx
   (bfd *, char *, int *, const void*, int);
 extern char *elfcore_write_loongarch_lasx
   (bfd *, char *, int *, const void*, int);
+/* TODO: NOVA TBD */
 
 /* Internal structure which holds information to be included in the
    PRPSINFO section of Linux core files.
