@@ -459,6 +459,10 @@
    architecture was derived.  */
 #define EM_CSKY_OLD		EM_MCORE
 
+/* DG Nova / 16-bit Eclipse backend magic number.  Written in the absence of an ABI.
+   0x5A40 is the DG RADIX-50 representation of "DGN".  */
+#define EM_NOVA			0x5A40
+
 /* See the above comment before you add a new EM_* value here.  */
 
 /* Values for e_version.  */
