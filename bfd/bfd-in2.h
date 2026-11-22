@@ -1849,6 +1849,8 @@ enum bfd_architecture
 #define bfd_mach_amdgcn_gfx1201         0x04e
 #define bfd_mach_amdgcn_gfx12_5_generic 0x05b
 #define bfd_mach_amdgcn_gfx1250         0x049
+  bfd_arch_nova,   /* NOVA.  */
+#define bfd_mach_nova       0
   bfd_arch_last
   };
 
@@ -7340,6 +7342,17 @@ enum bfd_reloc_code_real
   BFD_RELOC_LARCH_TLS_GD_PCADD_LO12,
   BFD_RELOC_LARCH_TLS_DESC_PCADD_HI20,
   BFD_RELOC_LARCH_TLS_DESC_PCADD_LO12,
+
+  /* NOVA relocations.  */
+  BFD_RELOC_NOVA_NONE,
+  BFD_RELOC_NOVA_GNU_VTINHERIT,
+  BFD_RELOC_NOVA_GNU_VTENTRY,
+  BFD_RELOC_NOVA_8,
+  BFD_RELOC_NOVA_HI8,
+  BFD_RELOC_NOVA_LO8,
+  BFD_RELOC_NOVA_16,
+  BFD_RELOC_NOVA_32,
+
   BFD_RELOC_UNUSED
 };
 typedef enum bfd_reloc_code_real bfd_reloc_code_real_type;
