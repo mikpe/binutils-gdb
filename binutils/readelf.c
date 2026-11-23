@@ -144,6 +144,7 @@
 #include "elf/nds32.h"
 #include "elf/nfp.h"
 #include "elf/nios2.h"
+#include "elf/nova.h"
 #include "elf/or1k.h"
 #include "elf/pj.h"
 #include "elf/ppc.h"
@@ -1321,6 +1322,7 @@ guess_is_rela (unsigned int e_machine)
     case EM_MT:
     case EM_NDS32:
     case EM_NIOS32:
+    case EM_NOVA:
     case EM_OR1K:
     case EM_PPC64:
     case EM_PPC:
@@ -2490,6 +2492,10 @@ dump_relocations (Filedata *          filedata,
 
 	case EM_NDS32:
 	  rtype = elf_nds32_reloc_type (type);
+	  break;
+
+	case EM_NOVA:
+	  rtype = elf_nova_reloc_type (type);
 	  break;
 
 	case EM_PPC:
@@ -4029,6 +4035,7 @@ get_machine_name (unsigned e_machine)
     case EM_ADAPTEVA_EPIPHANY:	return "Adapteva EPIPHANY";
     case EM_CYGNUS_FRV:		return "Fujitsu FR-V";
     case EM_S12Z:               return "Freescale S12Z";
+    case EM_NOVA:		return "DG Nova/Eclipse";
 
     default:
       snprintf (buff, sizeof (buff), _("<unknown>: 0x%x"), e_machine);
@@ -15655,6 +15662,8 @@ is_32bit_abs_reloc (Filedata * filedata, unsigned int reloc_type)
       return reloc_type == 12; /* R_NIOS2_BFD_RELOC_32.  */
     case EM_NIOS32:
       return reloc_type == 1; /* R_NIOS_32.  */
+    case EM_NOVA:
+      return reloc_type == 7; /* R_NOVA_32.  */
     case EM_OR1K:
       return reloc_type == 1; /* R_OR1K_32.  */
     case EM_PARISC:
@@ -15980,6 +15989,8 @@ is_16bit_abs_reloc (Filedata * filedata, unsigned int reloc_type)
       return reloc_type == 13; /* R_NIOS2_BFD_RELOC_16.  */
     case EM_NIOS32:
       return reloc_type == 9; /* R_NIOS_16.  */
+    case EM_NOVA:
+      return reloc_type == 6; /* R_NOVA_16.  */
     case EM_OR1K:
       return reloc_type == 2; /* R_OR1K_16.  */
     case EM_RISCV:
@@ -16241,6 +16252,7 @@ is_none_reloc (Filedata * filedata, unsigned int reloc_type)
     case EM_MN10300: /* R_MN10300_NONE.  */
     case EM_MOXIE:   /* R_MOXIE_NONE.  */
     case EM_NIOS32:  /* R_NIOS_NONE.  */
+    case EM_NOVA:    /* R_NOVA_NONE.  */
     case EM_OR1K:    /* R_OR1K_NONE. */
     case EM_PARISC:  /* R_PARISC_NONE.  */
     case EM_PPC64:   /* R_PPC64_NONE.  */
