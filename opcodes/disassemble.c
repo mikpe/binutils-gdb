@@ -74,6 +74,7 @@
 #define ARCH_mt
 #define ARCH_msp430
 #define ARCH_nds32
+#define ARCH_nova
 #define ARCH_ns32k
 #define ARCH_or1k
 #define ARCH_pdp11
@@ -302,6 +303,11 @@ disassembler (enum bfd_architecture a,
 #ifdef ARCH_nfp
     case bfd_arch_nfp:
       disassemble = print_insn_nfp;
+      break;
+#endif
+#ifdef ARCH_nova
+    case bfd_arch_nova:
+      disassemble = print_insn_nova;
       break;
 #endif
 #ifdef ARCH_ns32k
@@ -580,6 +586,9 @@ disassembler_usage (FILE *stream ATTRIBUTE_UNUSED)
 #ifdef ARCH_bpf
   print_bpf_disassembler_options (stream);
 #endif
+#ifdef ARCH_nova
+  print_nova_disassembler_options (stream);
+#endif
   return;
 }
 
@@ -681,6 +690,11 @@ disassemble_init_for_target (struct disassemble_info * info)
 #ifdef ARCH_bpf
     case bfd_arch_bpf:
       info->created_styled_output = true;
+      break;
+#endif
+#ifdef ARCH_nova
+    case bfd_arch_nova:
+      disassemble_init_nova (info);
       break;
 #endif
 #ifdef ARCH_pru
