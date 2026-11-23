@@ -5737,6 +5737,10 @@ get_machine_flags (Filedata * filedata, unsigned e_flags, unsigned e_machine)
 	    }
 	  break;
 
+	case EM_NOVA:
+	  /* TODO: TBD */
+	  break;
+
 	case EM_RISCV:
 	  out = decode_RISCV_machine_flags (out, e_flags);
 	  break;
