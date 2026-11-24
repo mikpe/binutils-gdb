@@ -1372,6 +1372,7 @@ case $cpu-$vendor in
 			| nios2eb \
 			| nios2el \
 			| none \
+			| nova \
 			| np1 \
 			| ns16k \
 			| ns32k \
